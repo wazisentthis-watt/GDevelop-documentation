@@ -1,7 +1,7 @@
 ---
 title: Creating a private web link
 ---
-
+s
 ## Creating a private web link
 
 Using GDevelop hosting servers, you can export your game for publication on the web. These servers are backed by Amazon's robust services. Sharing your game this way is free, and your game will be available through this link indefinitely!
