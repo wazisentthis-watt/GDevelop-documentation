@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>CCR — Octoverse | The Element Architect</title>
+<style>
+:root{
+  --gold:#C8940A;--glt:#FFD84D;--cyan:#00E5CC;
+  --s0:#060C10;--s1:#0D1117;--s2:#161B22;--s3:#21262D;--s4:#30363D;
+  --tx:#E6EDF3;--t2:#8B949E;--t3:#484F58;
+  --crown:#B388FF;--core:#FF6B6B;--root:#4ECDC4;
+  --resonance:#4ECDC4;--reaction:#FFD84D;--repulsion:#FF6B6B;--neutral:#8B949E;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{margin:0;background:var(--s0);color:var(--tx);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
+#app{max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;padding-bottom:12px;}
+.hdr{padding:12px 14px;background:var(--s1);border-bottom:1px solid var(--s3);display:flex;justify-content:space-between;align-items:center;}
+.hdr b{color:var(--gold);font-size:13px;letter-spacing:.4px;}
+.hdr .day{font-size:11px;color:var(--t2);}
+.bars{display:flex;gap:8px;padding:8px 14px;background:var(--s1);border-bottom:1px solid var(--s3);flex-wrap:wrap;}
+.bar-chip{font-size:10px;background:var(--s2);border:1px solid var(--s4);border-radius:6px;padding:3px 7px;color:var(--t2);}
+.bar-chip b{color:var(--tx);}
+.scene{padding:16px;}
+.card{background:var(--s1);border:1px solid var(--s3);border-radius:12px;padding:14px;margin-bottom:12px;}
+.card h2{margin:0 0 4px;font-size:15px;color:var(--gold);}
+.card .sub{font-size:10px;color:var(--t2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;}
+.card p{font-size:13px;line-height:1.55;margin:0 0 8px;color:var(--tx);}
+.elem-row{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0;}
+.elem{font-size:11px;background:var(--s3);border:1px solid var(--s4);border-radius:6px;padding:4px 8px;}
+.elem.crown{border-color:var(--crown);color:var(--crown);}
+.elem.core{border-color:var(--core);color:var(--core);}
+.elem.root{border-color:var(--root);color:var(--root);}
+.petals{display:flex;gap:4px;margin:6px 0;}
+.petal{width:16px;height:16px;border-radius:50%;background:var(--s3);border:1px solid var(--s4);}
+.petal.on{background:radial-gradient(circle,var(--glt),var(--gold));border-color:var(--glt);}
+.node-list{display:flex;flex-direction:column;gap:8px;}
+.node-btn{display:flex;align-items:center;gap:10px;background:var(--s1);border:1px solid var(--s3);border-radius:10px;padding:12px;text-align:left;color:var(--tx);}
+.node-btn .icon{font-size:20px;}
+.node-btn .txt b{display:block;font-size:13px;}
+.node-btn .txt span{font-size:11px;color:var(--t2);}
+.node-btn:disabled{opacity:.4;}
+.actrow{display:flex;flex-direction:column;gap:8px;margin-top:10px;}
+button.act{background:var(--s3);border:1px solid var(--s4);color:var(--tx);padding:12px;border-radius:10px;font-size:13px;font-weight:600;text-align:left;}
+button.act.primary{background:linear-gradient(135deg,var(--gold),var(--glt));color:#1a1400;border:none;}
+button.act:disabled{opacity:.35;}
+.clash-result{text-align:center;padding:10px;border-radius:8px;margin:8px 0;font-size:13px;font-weight:700;letter-spacing:.4px;}
+.clash-resonance{background:rgba(78,205,196,.15);color:var(--resonance);border:1px solid var(--resonance);}
+.clash-reaction{background:rgba(255,216,77,.15);color:var(--reaction);border:1px solid var(--reaction);}
+.clash-repulsion{background:rgba(255,107,107,.15);color:var(--repulsion);border:1px solid var(--repulsion);}
+.clash-neutral{background:rgba(139,148,158,.15);color:var(--neutral);border:1px solid var(--neutral);}
+.log{background:var(--s1);border:1px solid var(--s3);border-radius:10px;padding:10px;font-size:11px;color:var(--t2);max-height:120px;overflow-y:auto;margin-top:10px;}
+.log div{padding:2px 0;border-bottom:1px solid var(--s2);}
+.save-row{display:flex;gap:8px;padding:12px 14px;background:var(--s1);border-top:1px solid var(--s3);}
+.save-row button{flex:1;background:var(--s2);border:1px solid var(--s4);color:var(--t2);padding:8px;border-radius:8px;font-size:11px;}
+textarea#savecode{width:100%;background:var(--s2);border:1px solid var(--s4);color:var(--tx);border-radius:8px;padding:8px;font-size:10px;font-family:monospace;margin-top:8px;height:70px;}
+.toast{position:fixed;top:14px;left:50%;transform:translateX(-50%);background:var(--s2);border:1px solid var(--glt);color:var(--glt);padding:8px 16px;border-radius:20px;font-size:12px;font-weight:600;z-index:200;opacity:0;transition:opacity .3s;pointer-events:none;}
+.toast.on{opacity:1;}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="hdr">
+    <b>⚛️ OCTOVERSE ARCHIPELAGO</b>
+    <span class="day">Day <span id="day">1</span></span>
+  </div>
+  <div class="bars" id="bars"></div>
+  <div class="scene" id="scene"></div>
+  <div class="save-row">
+    <button onclick="exportSave()">⬇ EXPORT SAVE</button>
+    <button onclick="showImport()">⬆ IMPORT SAVE</button>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ══════════════════════════════════════════
+   CCR — OCTOVERSE
+   The first real playable slice of the Rule-of-Nine / five-element KoPani /
+   Crown Clash / Five-Petal Accord ruleset. One region, real mechanics, real
+   persistence. Not a demo of the full 118 — the vertical slice every one of
+   the reviewed council documents said to build first.
+   ══════════════════════════════════════════ */
+
+const ELEM = {
+  Au:{name:'Gold',EN:2.54,type:'heavy'}, Ga:{name:'Gallium',EN:1.81,type:'metal'},
+  Ir:{name:'Iridium',EN:2.20,type:'heavy'}, Si:{name:'Silicon',EN:1.90,type:'crystal'},
+  Se:{name:'Selenium',EN:2.55,type:'crystal'}, Bi:{name:'Bismuth',EN:2.02,type:'heavy'},
+  Cu:{name:'Copper',EN:1.90,type:'heavy'}, S:{name:'Sulfur',EN:2.58,type:'gas'},
+  O:{name:'Oxygen',EN:3.44,type:'gas'}, Na:{name:'Sodium',EN:0.93,type:'alkali'},
+  K:{name:'Potassium',EN:0.82,type:'alkali'}, C:{name:'Carbon',EN:2.55,type:'crystal'},
+  Ca:{name:'Calcium',EN:1.00,type:'metal'}, Fe:{name:'Iron',EN:1.83,type:'heavy'},
+  Xe:{name:'Xenon',EN:0.00,type:'noble'},
+};
+
+function crownClash(a,b){
+  const ea=ELEM[a], eb=ELEM[b];
+  if(ea.type==='noble'||eb.type==='noble') return 'NEUTRAL';
+  if(a===b) return 'RESONANCE';
+  const d=Math.abs(ea.EN-eb.EN);
+  if(d<0.5) return 'RESONANCE';
+  if(d<=1.7) return 'REACTION';
+  return 'REPULSION';
+}
+const CLASH_DESC = {
+  RESONANCE:'Compatible frequency — reads clean, costs less.',
+  REACTION:'A real exchange — both sides visibly change.',
+  REPULSION:'Frequencies fight each other — costly, unstable.',
+  NEUTRAL:'No interaction — the field stays inert.',
+};
+
+function freshState(){
+  return {
+    player:{ name:'Element Architect', crown:'Au', core:['Ga','Ir'], root:['Si','Se'], catalyst:'Bi',
+      coreAnimal:'Peregrine Falcon', rootAnimal:'Mimic Octopus',
+      lp:12,maxLp:12, ap:24,maxAp:24, dp:10,maxDp:10, sp:5,maxSp:10, mp:3,maxMp:3 },
+    roster:[
+      {id:'founder',name:'Octopus-Dolphin',stage:'adult',crown:'Cu',core:['Na','K'],root:['C','Ca'],petals:0},
+      {id:'hatchling',name:'Solar Falcon',stage:'hatchling',crown:'Au',core:['O','Fe'],root:[null,null],petals:0},
+      {id:'egg',name:'Dream Egg',stage:'egg',crown:null,core:[null,null],root:[null,null],petals:0},
+    ],
+    wild:{ copper:{name:'Copper-lineage KoPani',crown:'Cu',core:['S','O'],root:['Ca','C'],petals:2,bonded:false} },
+    flags:{ solderingVisited:false, solderingRespected:null, dnaFed:false, sentinelCleared:false, dreamEggAwake:false },
+    day:1, log:[], node:'hub',
+  };
+}
+let S = loadState() || freshState();
+
+function loadState(){
+  try{ const raw=localStorage.getItem('ccr_octoverse_v1'); if(raw) return JSON.parse(raw); }catch(e){}
+  return null;
+}
+function save(){ try{ localStorage.setItem('ccr_octoverse_v1', JSON.stringify(S)); }catch(e){} }
+function addLog(msg){ S.log.unshift(msg); if(S.log.length>40) S.log.length=40; }
+function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('on'); setTimeout(()=>t.classList.remove('on'),1800); }
+
+function elemChip(sym,role){ if(!sym) return `<span class="elem ${role}">dormant</span>`; return `<span class="elem ${role}">${ELEM[sym].name}</span>`; }
+
+function renderBars(){
+  const p=S.player;
+  document.getElementById('bars').innerHTML = `
+    <span class="bar-chip">LP <b>${p.lp}/${p.maxLp}</b></span>
+    <span class="bar-chip">AP <b>${p.ap}/${p.maxAp}</b></span>
+    <span class="bar-chip">DP <b>${p.dp}/${p.maxDp}</b></span>
+    <span class="bar-chip">SP <b>${p.sp}/${p.maxSp}</b></span>
+    <span class="bar-chip">MP <b>${p.mp}/${p.maxMp}</b></span>`;
+  document.getElementById('day').textContent = S.day;
+}
+
+function renderLogHTML(){
+  if(!S.log.length) return '';
+  return `<div class="log">${S.log.slice(0,8).map(l=>`<div>${l}</div>`).join('')}</div>`;
+}
+
+function goHub(){ S.node='hub'; render(); }
+
+function render(){
+  renderBars(); save();
+  const scene = document.getElementById('scene');
+  if(S.node==='hub') return renderHub(scene);
+  if(S.node==='tidepool') return renderTidepool(scene);
+  if(S.node==='soldering') return renderSoldering(scene);
+  if(S.node==='dna') return renderDNA(scene);
+  if(S.node==='shrine') return renderShrine(scene);
+  if(S.node==='sentinel') return renderSentinel(scene);
+}
+
+function renderHub(scene){
+  const p = S.player;
+  scene.innerHTML = `
+    <div class="card">
+      <h2>⚛️ ${p.name}</h2>
+      <div class="sub">Crown Au · Core Ga/Ir · Root Si/Se · Catalyst Bi</div>
+      <div class="elem-row">
+        ${elemChip(p.crown,'crown')} ${elemChip(p.core[0],'core')} ${elemChip(p.core[1],'core')} ${elemChip(p.root[0],'root')} ${elemChip(p.root[1],'root')}
+      </div>
+      <p>${p.coreAnimal} carries the Core. ${p.rootAnimal} carries the Root. You read the field before you spend anything on it.</p>
+    </div>
+    <div class="card">
+      <div class="sub">Where to go</div>
+      <div class="node-list">
+        <button class="node-btn" onclick="S.node='tidepool';render();">
+          <span class="icon">🌊</span><span class="txt"><b>The Tide Pool</b><span>${S.wild.copper.bonded?'Bond complete':`Copper-lineage KoPani — ${S.wild.copper.petals}/5 petals`}</span></span>
+        </button>
+        <button class="node-btn" onclick="S.node='soldering';render();">
+          <span class="icon">🔥</span><span class="txt"><b>The Soldering Pair</b><span>${S.flags.solderingVisited?(S.flags.solderingRespected?'Respected — they finished on their own':'Interrupted'):'Falcon-Turtle, mid-reorganization'}</span></span>
+        </button>
+        <button class="node-btn" onclick="S.node='dna';render();">
+          <span class="icon">🍄</span><span class="txt"><b>Free Ground DNA</b><span>${S.flags.dnaFed?'Dream Egg fed':'Unformed, settling into the sand'}</span></span>
+        </button>
+        <button class="node-btn" onclick="S.node='shrine';render();">
+          <span class="icon">🔮</span><span class="txt"><b>Nakikaru Shrine</b><span>Rest, save, advance the day</span></span>
+        </button>
+      </div>
+    </div>
+    ${renderLogHTML()}
+  `;
+}
+
+/* ---------- TIDE POOL: the 5-Petal Accord, petals 3-5 ---------- */
+function renderTidepool(scene){
+  const w = S.wild.copper;
+  let body = '';
+  if(w.petals>=5){
+    body = `<p>The Copper KoPani rides low in the water beside you now, oxidation sealed, leg fully sound. This isn't a leash. It's a route it chose to keep open.</p>
+      <div class="petals">${[1,2,3,4,5].map(i=>`<div class="petal on"></div>`).join('')}</div>
+      <p style="color:var(--resonance);font-size:12px;">✦ Accord complete — bonded to your roster.</p>`;
+  } else if(w.petals===2){
+    body = `<p><b>Petal 3 — Adapt.</b> The tide keeps rising. A second oxidation patch is opening on its far side, out of your reach from here. It's watching you decide, not asking.</p>
+      <div class="petals">${[1,2,3,4,5].map(i=>`<div class="petal ${i<=w.petals?'on':''}"></div>`).join('')}</div>
+      <div class="actrow">
+        <button class="act primary" onclick="tidepoolAdapt('reposition')">Reposition it toward shallow rock (Root — Si reads the safest new footing)</button>
+        <button class="act" onclick="tidepoolAdapt('force')">Force it to the far patch now (Core — spend AP, ignore the read)</button>
+      </div>`;
+  } else if(w.petals===3){
+    body = `<p><b>Petal 4 — Shared Function.</b> Calm now, it noses toward a half-buried shape in the sand near your feet — not food, not danger. Something it's been guarding.</p>
+      <div class="petals">${[1,2,3,4,5].map(i=>`<div class="petal ${i<=w.petals?'on':''}"></div>`).join('')}</div>
+      <div class="actrow">
+        <button class="act primary" onclick="tidepoolShared()">Let it show you, unhurried</button>
+      </div>`;
+  } else if(w.petals===4){
+    body = `<p><b>Petal 5 — Return.</b> The buried shape was a cracked Silicon shard — old, structural, part of what used to hold this pool's wall together. You could keep it. Or set it back.</p>
+      <div class="petals">${[1,2,3,4,5].map(i=>`<div class="petal ${i<=w.petals?'on':''}"></div>`).join('')}</div>
+      <div class="actrow">
+        <button class="act primary" onclick="tidepoolReturn(true)">Set the shard back into the wall</button>
+        <button class="act" onclick="tidepoolReturn(false)">Keep it — Silicon is useful</button>
+      </div>`;
+  }
+  scene.innerHTML = `<div class="card"><h2>🌊 The Tide Pool</h2><div class="sub">Copper-lineage KoPani</div>${body}</div>
+    <button class="act" onclick="goHub()">← Back to the Archipelago</button>`;
+}
+window.tidepoolAdapt = function(choice){
+  const w = S.wild.copper;
+  const outcome = crownClash(S.player.crown, w.crown); // Au vs Cu read
+  if(choice==='reposition'){
+    w.petals = 3;
+    addLog(`🌊 Read the water correctly — ${CLASH_DESC[outcome]}`);
+    toast('Petal 3 — Adapt earned');
+  } else {
+    // forcing costs AP and risks the bond stalling, not breaking
+    S.player.ap = Math.max(0, S.player.ap-4);
+    addLog('🌊 Forced the move. It complied — but it noticed.');
+    toast('Costed 4 AP — petal held at 2');
+  }
+  render();
+};
+window.tidepoolShared = function(){
+  S.wild.copper.petals = 4;
+  addLog('🌊 Shared Function earned — it trusted you with what it was guarding.');
+  toast('Petal 4 — Shared Function earned');
+  render();
+};
+window.tidepoolReturn = function(giveBack){
+  const w = S.wild.copper;
+  if(giveBack){
+    w.petals = 5; w.bonded = true;
+    S.roster.push({id:'copper',name:w.name,stage:'adult',crown:w.crown,core:w.core,root:w.root,petals:5});
+    addLog('🌊 Returned the shard. Accord complete — Copper-lineage KoPani joins your roster.');
+    toast('✦ ACCORD COMPLETE');
+  } else {
+    addLog('🌊 Kept the shard. The KoPani stayed nearby, but the Accord stopped at 4/5.');
+    toast('Petal 5 not earned — kept at 4');
+  }
+  render();
+};
+
+/* ---------- SOLDERING PAIR: an ethical Crown Clash, no combat ---------- */
+function renderSoldering(scene){
+  if(S.flags.solderingVisited){
+    scene.innerHTML = `<div class="card"><h2>🔥 The Soldering Pair</h2><p>${S.flags.solderingRespected?'They finished on their own terms while you watched from a distance. Neither owes you anything for that — which is the point.':'They broke apart mid-Soldering when you stepped in. Whatever they were becoming, they will have to start over.'}</p></div>
+    <button class="act" onclick="goHub()">← Back to the Archipelago</button>`;
+    return;
+  }
+  scene.innerHTML = `
+    <div class="card">
+      <h2>🔥 The Soldering Pair</h2>
+      <p>A Falcon-Turtle bond is reorganizing itself at a mineral spring — reconfiguring which Core and Root each of them carries. It's not a fight. It's not for you.</p>
+      <div class="actrow">
+        <button class="act primary" onclick="solderingChoice(true)">Stay back — let it finish</button>
+        <button class="act" onclick="solderingChoice(false)">Step in — see what's happening up close</button>
+      </div>
+    </div>
+    <button class="act" onclick="goHub()">← Back to the Archipelago</button>
+  `;
+}
+window.solderingChoice = function(respect){
+  S.flags.solderingVisited = true;
+  S.flags.solderingRespected = respect;
+  if(respect){
+    S.player.sp = Math.min(S.player.maxSp, S.player.sp+1);
+    addLog('🔥 Respected the Soldering. +1 SP — Nakikaru noticed.');
+    toast('+1 SP — restraint recognized');
+  } else {
+    S.player.dp = Math.max(0, S.player.dp-2);
+    addLog('🔥 Interrupted the Soldering. The bond fractured. -2 DP — the backlash reads through your own Root.');
+    toast('-2 DP — the interruption cost you');
+  }
+  render();
+};
+
+/* ---------- FREE GROUND DNA: feed the Dream Egg, or over-extract ---------- */
+function renderDNA(scene){
+  if(S.flags.dreamEggAwake){
+    const egg = S.roster.find(k=>k.id==='egg');
+    scene.innerHTML = `<div class="card"><h2>🍄 Free Ground DNA</h2><p>The Dream Egg opened its first petal here. Crown: ${ELEM[egg.crown].name}.</p></div><button class="act" onclick="goHub()">← Back</button>`;
+    return;
+  }
+  scene.innerHTML = `
+    <div class="card">
+      <h2>🍄 Free Ground DNA</h2>
+      <p>Loose biological memory, settling into the sand — not alive, not gone. Your Dream Egg can feed on a little of it and open its first petal. Taking more than a little pulls the deposit apart before it can become anything on its own.</p>
+      <div class="actrow">
+        <button class="act primary" onclick="dnaFeed(false)">Feed the Egg one measured pull</button>
+        <button class="act" onclick="dnaFeed(true)">Take as much as you can hold</button>
+      </div>
+    </div>
+    <button class="act" onclick="goHub()">← Back to the Archipelago</button>
+  `;
+}
+window.dnaFeed = function(greedy){
+  S.flags.dnaFed = true;
+  if(!greedy){
+    const egg = S.roster.find(k=>k.id==='egg');
+    egg.crown = 'Si'; // first petal opens toward Silicon -- matches the Archipelago's terrain
+    S.flags.dreamEggAwake = true;
+    addLog('🍄 Fed the Egg carefully. Its Crown petal opened: Silicon.');
+    toast('Dream Egg — Crown petal opened');
+    render();
+  } else {
+    addLog('🍄 Overdrew the deposit. Something noticed.');
+    toast('Nakikaru Sentinel incoming');
+    S.node = 'sentinel'; render();
+  }
+};
+
+/* ---------- SENTINEL: the one real combat encounter ---------- */
+function renderSentinel(scene){
+  if(S.flags.sentinelCleared){
+    scene.innerHTML = `<div class="card"><h2>🛡️ Nakikaru Sentinel</h2><p>Stabilized. It returned to stillness once the field balanced again.</p></div><button class="act" onclick="goHub()">← Back</button>`;
+    return;
+  }
+  const outcome = crownClash(S.player.crown, 'Xe'); // Sentinel reads as an inert/noble-type construct
+  scene.innerHTML = `
+    <div class="card">
+      <h2>🛡️ Nakikaru Sentinel</h2>
+      <div class="sub">Crown Xenon — inert by design, not by nature</div>
+      <p>It isn't angry. It's a damping function given a body: something over-extracted, and it exists to bring the field back to zero before the imbalance spreads.</p>
+      <div class="clash-result clash-${outcome.toLowerCase()}">${outcome} — ${CLASH_DESC[outcome]}</div>
+      <div class="actrow">
+        <button class="act primary" onclick="sentinelAct('core')">Core — spend AP, meet it directly (8 AP)</button>
+        <button class="act" onclick="sentinelAct('root')">Root — brace and absorb with DP</button>
+        <button class="act" onclick="sentinelAct('crown')">Crown — spend SP to read a way past it</button>
+      </div>
+    </div>
+  `;
+}
+window.sentinelAct = function(mode){
+  const p = S.player;
+  if(mode==='core'){
+    if(p.ap<8){ toast('Not enough AP'); return; }
+    p.ap -= 8; p.lp = Math.max(0, p.lp-2);
+    addLog('🛡️ Met it directly. -8 AP, -2 LP — a Neutral field gives nothing back easily.');
+  } else if(mode==='root'){
+    p.dp = Math.max(0, p.dp-3);
+    addLog('🛡️ Braced and absorbed. -3 DP. It stilled.');
+  } else {
+    if(p.sp<2){ toast('Not enough SP'); return; }
+    p.sp -= 2;
+    addLog('🛡️ Read a route around it instead of through it. -2 SP, no damage taken.');
+  }
+  S.flags.sentinelCleared = true;
+  toast('Sentinel stabilized');
+  S.node='hub';
+  render();
+};
+
+/* ---------- SHRINE: rest, save, advance day ---------- */
+function renderShrine(scene){
+  scene.innerHTML = `
+    <div class="card">
+      <h2>🔮 Nakikaru Shrine</h2>
+      <p>"You are not being graded. You are being watched — which is different, and which I will not apologize for."</p>
+      <div class="actrow">
+        <button class="act primary" onclick="restDay()">Rest — advance the day, restore AP/DP/SP</button>
+      </div>
+    </div>
+    <button class="act" onclick="goHub()">← Back to the Archipelago</button>
+  `;
+}
+window.restDay = function(){
+  const p = S.player;
+  S.day += 1;
+  p.ap = p.maxAp; p.dp = p.maxDp; p.sp = Math.min(p.maxSp, p.sp+2);
+  addLog(`🔮 Day ${S.day} begins.`);
+  toast('Rested — AP/DP restored');
+  render();
+};
+
+/* ---------- SAVE / EXPORT / IMPORT ---------- */
+window.exportSave = function(){
+  const code = btoa(unescape(encodeURIComponent(JSON.stringify(S))));
+  const scene = document.getElementById('scene');
+  const box = document.createElement('div');
+  box.className = 'card';
+  box.innerHTML = `<h2>⬇ Export save</h2><p>Copy this code. Bring it back with Import Save on any device.</p><textarea id="savecode" readonly>${code}</textarea>`;
+  scene.prepend(box);
+  toast('Save code generated');
+};
+window.showImport = function(){
+  const scene = document.getElementById('scene');
+  const box = document.createElement('div');
+  box.className = 'card';
+  box.innerHTML = `<h2>⬆ Import save</h2><textarea id="importbox" placeholder="Paste your save code here"></textarea><div class="actrow"><button class="act primary" onclick="doImport()">Load</button></div>`;
+  scene.prepend(box);
+};
+window.doImport = function(){
+  try{
+    const raw = document.getElementById('importbox').value.trim();
+    const parsed = JSON.parse(decodeURIComponent(escape(atob(raw))));
+    S = parsed; S.node='hub';
+    save(); render();
+    toast('Save loaded');
+  }catch(e){ toast('Invalid save code'); }
+};
+
+render();
+</script>
+</body>
+</html>

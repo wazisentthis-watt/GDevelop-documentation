@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CCR × WIR — Character Select</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0C0E12;
+    --surface:#15181D;
+    --surface-2:#1B1F26;
+    --paper:#ECE7DA;
+    --paper-dim:#9CA0A8;
+    --line:#262B33;
+    --crown:#E3B23C;
+    --core:#4FA8A0;
+    --root:#B5533C;
+    --tier-omega:#E8C468;
+    --tier-plus:#B79CE0;
+    --tier-aa:#5FC9BE;
+    --tier-aplus:#7C93D1;
+    --tier-a:#9098A4;
+    --tier-prov:#565B64;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(1200px 600px at 15% -10%, rgba(227,178,60,0.06), transparent 60%),
+      radial-gradient(1000px 500px at 100% 0%, rgba(79,168,160,0.07), transparent 55%),
+      var(--bg);
+    color:var(--paper);
+    font-family:'IBM Plex Sans', sans-serif;
+    min-height:100vh;
+  }
+  ::selection{background:var(--crown);color:#141414;}
+  a{color:inherit;}
+
+  .wrap{max-width:1280px;margin:0 auto;padding:28px 20px 60px;}
+
+  header.top{
+    display:flex;flex-wrap:wrap;gap:20px;align-items:flex-end;justify-content:space-between;
+    border-bottom:1px solid var(--line);
+    padding-bottom:20px;margin-bottom:20px;
+  }
+  .brand-eyebrow{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;letter-spacing:.18em;text-transform:uppercase;
+    color:var(--paper-dim);margin:0 0 6px;
+  }
+  .brand-title{
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:700;font-size:clamp(28px,4.2vw,44px);
+    margin:0;line-height:1;letter-spacing:-0.01em;
+  }
+  .brand-title .x{color:var(--crown);padding:0 8px;font-weight:500;}
+  .brand-sub{
+    font-family:'Space Grotesk',sans-serif;font-weight:500;
+    font-size:15px;color:var(--paper-dim);margin:8px 0 0;
+  }
+  .stat-block{
+    display:flex;gap:22px;font-family:'IBM Plex Mono',monospace;
+  }
+  .stat-block div{text-align:right;}
+  .stat-num{font-size:22px;font-weight:600;color:var(--paper);line-height:1;}
+  .stat-label{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--paper-dim);margin-top:4px;}
+
+  .controls{
+    display:flex;flex-wrap:wrap;gap:10px;margin-bottom:22px;
+  }
+  .controls input[type=text], .controls select{
+    background:var(--surface);
+    border:1px solid var(--line);
+    color:var(--paper);
+    font-family:'IBM Plex Mono',monospace;
+    font-size:13px;
+    padding:10px 12px;
+    border-radius:8px;
+    outline:none;
+  }
+  .controls input[type=text]{flex:1 1 220px;min-width:180px;}
+  .controls input[type=text]::placeholder{color:var(--paper-dim);}
+  .controls select{cursor:pointer;}
+  .controls input[type=text]:focus-visible, .controls select:focus-visible{
+    border-color:var(--core);box-shadow:0 0 0 2px rgba(79,168,160,.25);
+  }
+
+  .legend{
+    display:flex;flex-wrap:wrap;gap:14px;
+    font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--paper-dim);
+    margin-bottom:22px;letter-spacing:.02em;
+  }
+  .legend span{display:inline-flex;align-items:center;gap:6px;}
+  .legend i{width:9px;height:9px;border-radius:2px;display:inline-block;}
+
+  #results-meta{
+    font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--paper-dim);
+    margin-bottom:14px;
+  }
+
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(196px,1fr));
+    gap:12px;
+  }
+
+  .card{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:14px;
+    display:flex;flex-direction:column;
+    min-height:186px;
+    position:relative;
+    opacity:0;
+    transform:translateY(6px);
+    animation:rise .38s ease forwards;
+    transition:border-color .15s ease, transform .15s ease, background .15s ease;
+  }
+  .card:hover{border-color:var(--core);transform:translateY(-2px);background:var(--surface-2);}
+  @keyframes rise{to{opacity:1;transform:translateY(0);}}
+
+  .card-top{display:flex;justify-content:space-between;align-items:flex-start;}
+  .card-index{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--paper-dim);}
+  .card-group-emoji{font-size:14px;line-height:1;opacity:.9;}
+
+  .card-symbol{
+    font-family:'Space Grotesk',sans-serif;font-weight:700;
+    font-size:30px;line-height:1;margin:10px 0 2px;color:var(--paper);
+  }
+  .card-name{
+    font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:14px;
+    margin:0 0 8px;color:var(--paper);
+  }
+
+  .card-classes{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:9px;}
+  .pill{
+    font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.03em;
+    text-transform:uppercase;
+    border:1px solid var(--line);
+    color:var(--paper-dim);
+    padding:3px 7px;border-radius:20px;
+  }
+
+  .card-tag{
+    font-family:'IBM Plex Sans',sans-serif;font-size:11.5px;line-height:1.4;
+    color:var(--paper-dim);
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+    margin-bottom:10px;flex:1;
+  }
+
+  .card-bottom{display:flex;justify-content:space-between;align-items:flex-end;margin-top:auto;}
+  .card-group-label{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--paper-dim);max-width:110px;line-height:1.3;}
+  .aa-badge{
+    font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:14px;
+    padding:3px 8px;border-radius:6px;line-height:1.4;
+    background:rgba(255,255,255,.05);
+  }
+  .prov-flag{
+    position:absolute;top:10px;right:12px;
+    font-family:'IBM Plex Mono',monospace;font-size:8.5px;letter-spacing:.08em;
+    color:var(--tier-prov);text-transform:uppercase;
+  }
+
+  #empty-state{
+    display:none;padding:60px 20px;text-align:center;
+    font-family:'IBM Plex Mono',monospace;color:var(--paper-dim);
+  }
+  #empty-state button{
+    margin-top:10px;background:none;border:1px solid var(--line);color:var(--paper);
+    font-family:'IBM Plex Mono',monospace;font-size:12px;padding:8px 14px;border-radius:6px;cursor:pointer;
+  }
+  #empty-state button:hover{border-color:var(--core);}
+
+  footer{
+    margin-top:34px;padding-top:16px;border-top:1px solid var(--line);
+    font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--paper-dim);
+    line-height:1.7;
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    .card{animation:none;opacity:1;transform:none;}
+  }
+  @media (max-width:520px){
+    .stat-block{gap:14px;}
+    .grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));}
+    .card{min-height:172px;padding:12px;}
+    .card-symbol{font-size:24px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div>
+      <p class="brand-eyebrow">Crown · Core · Root</p>
+      <h1 class="brand-title">CCR<span class="x">×</span>WIR</h1>
+      <p class="brand-sub">Character Select — 123 Playable Fighters</p>
+    </div>
+    <div class="stat-block">
+      <div><div class="stat-num" id="stat-total">123</div><div class="stat-label">Roster</div></div>
+      <div><div class="stat-num" id="stat-groups">14</div><div class="stat-label">Universes</div></div>
+      <div><div class="stat-num" id="stat-prov">9</div><div class="stat-label">Provisional</div></div>
+    </div>
+  </header>
+
+  <div class="controls">
+    <input type="text" id="search" placeholder="Search fighters…" aria-label="Search fighters by name">
+    <select id="filter-group" aria-label="Filter by universe"><option value="">All Universes</option></select>
+    <select id="filter-class" aria-label="Filter by class"><option value="">All Classes</option></select>
+    <select id="sort-by" aria-label="Sort roster">
+      <option value="id">Roster Order</option>
+      <option value="aa-desc">AA Score — High to Low</option>
+      <option value="aa-asc">AA Score — Low to High</option>
+      <option value="name">Name — A to Z</option>
+    </select>
+  </div>
+
+  <div class="legend">
+    <span><i style="background:var(--tier-omega)"></i>AAΩ · 11.50+</span>
+    <span><i style="background:var(--tier-plus)"></i>AA+ · 10.75–11.49</span>
+    <span><i style="background:var(--tier-aa)"></i>AA · 9.75–10.74</span>
+    <span><i style="background:var(--tier-aplus)"></i>A+ · 8.75–9.74</span>
+    <span><i style="background:var(--tier-a)"></i>A · 7.50–8.74</span>
+    <span><i style="background:var(--tier-prov)"></i>Provisional — score not yet in canon</span>
+  </div>
+
+  <p id="results-meta"></p>
+  <div class="grid" id="grid"></div>
+  <div id="empty-state">
+    <div>No fighters match those filters.</div>
+    <button id="clear-filters">Clear filters</button>
+  </div>
+
+  <footer>
+    Grade bands follow the official WIR AA scale. AA Overall = sum of 12 Attunement Ability stats (max 12.00).<br>
+    Crown / Core / Root + elemental assignment not yet applied to this roster — selection layer only.
+  </footer>
+
+</div>
+
+<script>
+const GROUPS = {
+  amu:{label:"AMU / Octo-Matrix", emoji:"🌌"},
+  nem:{label:"Planet Nem / Nimis", emoji:"🦁"},
+  con:{label:"Constellation Saga", emoji:"🚀"},
+  den:{label:"Denni Denim", emoji:"🧵"},
+  ali:{label:"Alien-Like", emoji:"🐝"},
+  cvk:{label:"Consumption", emoji:"🍽️"},
+  sll:{label:"Sounds Like Light", emoji:"🌈"},
+  afi:{label:"Afro A-I", emoji:"🌍"},
+  dgn:{label:"Dogon Dragon", emoji:"🐉"},
+  smw:{label:"See My World", emoji:"🧠"},
+  bbb:{label:"Bread, Bred & Bready", emoji:"🍞"},
+  b90:{label:"Bring Back the 90s", emoji:"📼"},
+  mna:{label:"May Naki Ask", emoji:"📡"},
+  ohm:{label:"Oh No to Mars", emoji:"🧬"}
+};
+
+// n=name g=group c=classes a=AA overall p=provisional t=tagline s=symbol
+const DATA = [
+{id:1,n:"Amu",g:"amu",c:["Strategist","Support"],a:7.80,p:true,s:"Am",t:"The everyday teen at the center of every transformation."},
+{id:2,n:"Serius B'Amu",g:"amu",c:["Speed","Strategist"],a:10.79,p:false,s:"SrB",t:"Reads every opening the battlefield offers before anyone else does."},
+{id:3,n:"Aura Void Amu",g:"amu",c:["Reality","Powerhouse"],a:11.32,p:false,s:"AVA",t:"Void-attuned reality bender operating at apex output."},
+{id:4,n:"Temperature Rex",g:"amu",c:["Powerhouse","Wild Card"],a:9.60,p:true,s:"TpX",t:"Heat and pressure incarnate, dinosaur-scale thermal force."},
+{id:5,n:"Galaxy Rabbit",g:"amu",c:["Speed","Wild Card"],a:9.30,p:true,s:"GxR",t:"Space-folding speedster who treats distance as optional."},
+{id:6,n:"Flux Fly",g:"amu",c:["Attunement","Technical"],a:9.74,p:false,s:"FlF",t:"Evolves mid-fight, countering whatever just hit it."},
+{id:7,n:"DNA Burglar",g:"amu",c:["Summoner","Technical"],a:9.50,p:true,s:"DNB",t:"Borrows biology on contact, never quite the same twice."},
+{id:8,n:"Timetracker",g:"amu",c:["Control","Reality"],a:9.80,p:true,s:"TmT",t:"Keeps score of every moment that's already happened."},
+{id:9,n:"Disco Display",g:"amu",c:["Support","Wild Card"],a:9.00,p:true,s:"DsD",t:"Hypnotic light and rhythm built to misdirect."},
+{id:10,n:"Resonant Roar",g:"amu",c:["Powerhouse","Attunement"],a:9.70,p:true,s:"RnR",t:"A single cry carrying structural, city-shaking force."},
+{id:11,n:"Auto Matrix",g:"amu",c:["Technical","Powerhouse"],a:9.90,p:true,s:"AtM",t:"Mechanized Octo-Matrix form built for sustained output."},
+{id:12,n:"Jaku",g:"amu",c:["Powerhouse","Wild Card"],a:10.20,p:true,s:"Jk",t:"Predator instinct before Convergence ever kicks in."},
+{id:13,n:"Convergence Jaku",g:"amu",c:["Powerhouse","Reality"],a:11.47,p:false,s:"CvJ",t:"Multiple evolutionary Jakus overlapping in one body."},
+{id:14,n:"JaMu Ghawonder",g:"amu",c:["Reality","Strategist"],a:11.18,p:false,s:"JMG",t:"Atomic and probability systems running at apex scale."},
+{id:15,n:"Quantum Man",g:"amu",c:["Strategist","Reality"],a:10.34,p:false,s:"QMn",t:"Finds the smallest movement that changes the biggest outcome."},
+{id:16,n:"Astro King",g:"amu",c:["Reality","Powerhouse"],a:10.28,p:false,s:"AsK",t:"Gravity and dimension bent to his command."},
+{id:17,n:"Quantum Dragon",g:"amu",c:["Reality","Powerhouse"],a:11.04,p:false,s:"QDr",t:"Probability and reality-regulation given draconic form."},
+{id:18,n:"Khepraxis",g:"amu",c:["Reality","Attunement"],a:10.48,p:false,s:"Khx",t:"Cosmic-physics specialist operating near the top tier."},
+
+{id:19,n:"Nemzo",g:"nem",c:["Powerhouse","Strategist"],a:10.86,p:false,s:"Nz",t:"Treats elements like military systems that occupy and deceive."},
+{id:20,n:"Raikor",g:"nem",c:["Speed","Strategist"],a:10.25,p:false,s:"Rk",t:"Lightning that lands the instant you commit to a move."},
+{id:21,n:"Queen Sylara",g:"nem",c:["Control","Attunement"],a:10.55,p:false,s:"QSy",t:"Freezes emotional acceleration before it becomes an attack."},
+{id:22,n:"Torgamane",g:"nem",c:["Powerhouse","Control"],a:9.70,p:false,s:"Tg",t:"Gets heavier the more he chooses to protect."},
+{id:23,n:"Aeruli",g:"nem",c:["Speed","Technical"],a:10.50,p:false,s:"Ae",t:"Moves through pressure paths nobody else can perceive."},
+{id:24,n:"Namiro",g:"nem",c:["Attunement","Support"],a:10.72,p:false,s:"Nm",t:"Carries grief as controlled, patient hydrostatic force."},
+{id:25,n:"Noctyra",g:"nem",c:["Attunement","Wild Card"],a:10.82,p:false,s:"Nc",t:"Weaponizes the traits people refuse to admit they have."},
+{id:26,n:"Sol'Kai",g:"nem",c:["Attunement","Support"],a:10.83,p:false,s:"SK",t:"Converts raw emotion into colored sonic force."},
+{id:27,n:"Verdan Roar",g:"nem",c:["Support","Summoner"],a:10.71,p:false,s:"VR",t:"Binds species together into one voluntary defense network."},
+{id:28,n:"Orixion",g:"nem",c:["Reality","Strategist"],a:11.32,p:false,s:"Ox",t:"Makes committed choices gravitationally hard to take back."},
+{id:29,n:"Astraeon",g:"nem",c:["Reality","Attunement"],a:11.44,p:false,s:"At",t:"Extends identity through stellar matter without losing himself."},
+{id:30,n:"Ro'Amun",g:"nem",c:["Reality","Attunement"],a:11.58,p:false,s:"RA",t:"Manifests Planet Nem's earliest ancestral memory — highest AA on the roster."},
+{id:31,n:"Nemeroth",g:"nem",c:["Powerhouse","Reality"],a:11.33,p:false,s:"Ne",t:"Built entirely from what Nem rejected and cast away."},
+
+{id:32,n:"Melanaris",g:"con",c:["Reality","Powerhouse"],a:10.61,p:false,s:"Ml",t:"Fractures instead of dying — every shard stays active."},
+{id:33,n:"Nataraja Nimbus",g:"con",c:["Attunement","Support"],a:9.28,p:false,s:"NNb",t:"Turns joy into color, but never denies grief."},
+{id:34,n:"Luma Shipwright",g:"con",c:["Technical","Support"],a:9.08,p:false,s:"LSh",t:"Blind engineer who reads structure through vibration alone."},
+{id:35,n:"Wazi",g:"con",c:["Strategist","Technical"],a:9.42,p:false,s:"Wz",t:"Perfect memory paired with an Afro-AI predictive core."},
+{id:36,n:"Jinx",g:"con",c:["Wild Card","Reality"],a:9.36,p:false,s:"Jx",t:"Existence gets more stable the more he's genuinely known."},
+{id:37,n:"Raleigh",g:"con",c:["Support","Attunement"],a:8.93,p:false,s:"Rl",t:"Owl-fungi ecological arbiter, redistributing what a system lacks."},
+{id:38,n:"Groovy Jaava",g:"con",c:["Support","Wild Card"],a:8.87,p:false,s:"GJv",t:"Octo-DJ who reads truth as frequency."},
+{id:39,n:"Zeo",g:"con",c:["Speed","Wild Card"],a:9.60,p:false,s:"Ze",t:"Speed built entirely from honest, unforced joy."},
+{id:40,n:"Georgia AI",g:"con",c:["Strategist","Technical"],a:10.25,p:false,s:"GAI",t:"The Constellation's own ship-mind, reading crew and context together."},
+{id:41,n:"Morales",g:"con",c:["Technical","Strategist"],a:9.94,p:false,s:"Mrl",t:"Senses swapped and remixed — tastes intent, hears geometry."},
+{id:42,n:"Corain",g:"con",c:["Support","Technical"],a:10.17,p:false,s:"Cr",t:"Reads roads, rivers, and blood vessels as the same problem."},
+{id:43,n:"Proto",g:"con",c:["Technical","Control"],a:10.05,p:false,s:"Pt",t:"Codes consent directly into symbols, signs, and interfaces."},
+{id:44,n:"Zayo",g:"con",c:["Speed","Wild Card"],a:9.54,p:false,s:"Zy",t:"Uses comedic timing as literal evasive footwork."},
+{id:45,n:"Lumea",g:"con",c:["Technical","Attunement"],a:10.04,p:false,s:"Lm",t:"Hears written language and machine intent as tonal frequency."},
+
+{id:46,n:"Denni Denim",g:"den",c:["Attunement","Control"],a:10.56,p:false,s:"DD",t:"Thread-weaver whose Loom moves memory, history, and community as one."},
+{id:47,n:"War Denni",g:"den",c:["Powerhouse","Attunement"],a:9.21,p:false,s:"WD",t:"Denni's combat-forward Thread state."},
+{id:48,n:"Mama Shula",g:"den",c:["Support","Attunement"],a:8.82,p:false,s:"MSh",t:"Spiritual matriarch grounding power before it drowns anyone."},
+{id:49,n:"Marcus Mercy",g:"den",c:["Support","Strategist"],a:8.75,p:false,s:"MMc",t:"Denni's ally, built around restraint over force."},
+{id:50,n:"Nalo",g:"den",c:["Support","Attunement"],a:9.19,p:false,s:"Na",t:"Stabilizes history through the detail everyone else forgot to record."},
+{id:51,n:"Jaylen",g:"den",c:["Technical","Strategist"],a:9.12,p:false,s:"Jyl",t:"Traces the historical bias hiding inside modern systems."},
+{id:52,n:"Commander Mercer",g:"den",c:["Control","Strategist"],a:9.11,p:false,s:"CMc",t:"Treats history re-entering the present as a breach to contain."},
+{id:53,n:"Oracle",g:"den",c:["Reality","Strategist"],a:9.63,p:false,s:"Or",t:"Attacks the revolution through childhood memory itself."},
+
+{id:54,n:"Glerk",g:"ali",c:["Powerhouse","Support"],a:9.64,p:false,s:"Gl",t:"Cosmic-scale plumber whose 'durability' is really second-shift maintenance."},
+{id:55,n:"Zibra",g:"ali",c:["Support","Control"],a:9.16,p:false,s:"Zb",t:"Manages panic, praise, and crowds like traffic systems."},
+{id:56,n:"Piv",g:"ali",c:["Technical","Strategist"],a:9.04,p:false,s:"Pv",t:"Treats information the way Glerk treats pipes."},
+{id:57,n:"Drib",g:"ali",c:["Technical","Wild Card"],a:9.31,p:false,s:"Dr",t:"Seven years old, hears machine failure before it happens."},
+{id:58,n:"Lil Buzz",g:"ali",c:["Wild Card","Summoner"],a:8.18,p:false,s:"LB",t:"A prophecy engine with a juice cup."},
+{id:59,n:"Grandma",g:"ali",c:["Powerhouse","Control"],a:9.38,p:false,s:"Gm",t:"Possibly had powers the whole time and just never mentioned it."},
+{id:60,n:"Auntie",g:"ali",c:["Speed","Support"],a:9.51,p:false,s:"Au",t:"Galaxy Pollinator — terrifyingly fast, always somehow half-asleep."},
+{id:61,n:"Dog-Wasp",g:"ali",c:["Technical","Support"],a:8.31,p:false,s:"DW",t:"Tracks divine residue and vomits up exactly the right receipt."},
+{id:62,n:"Praying Mantis Cat",g:"ali",c:["Control","Wild Card"],a:8.58,p:false,s:"PMC",t:"Already watching from the background before the truth arrives."},
+{id:63,n:"Sir Sucksworth",g:"ali",c:["Support","Control"],a:8.81,p:false,s:"SSw",t:"An ancient psychopomp mistaken for a household plunger."},
+{id:64,n:"Tooki",g:"ali",c:["Support","Wild Card"],a:7.74,p:false,s:"Tk",t:"Says the obvious thing everyone else was avoiding out loud."},
+{id:65,n:"Buzzbots",g:"ali",c:["Summoner","Technical"],a:8.76,p:false,s:"Bz",t:"Distributed repair swarm, still filing complaints about fixing emotions."},
+{id:66,n:"The Crack",g:"ali",c:["Reality","Wild Card"],a:9.29,p:false,s:"Ck",t:"The B-Hole's newest — and most dangerous — family member."},
+
+{id:67,n:"Malik Vey",g:"cvk",c:["Attunement","Powerhouse"],a:10.11,p:false,s:"MV",t:"Draws stability from sacred, ancestral meals."},
+{id:68,n:"Mama Solaris",g:"cvk",c:["Support","Attunement"],a:9.66,p:false,s:"MSl",t:"Courthouse chef who translates memory into nourishment."},
+{id:69,n:"Judge Nox",g:"cvk",c:["Control","Strategist"],a:10.15,p:false,s:"JNx",t:"Makes claims physically heavy in proportion to their evidence."},
+{id:70,n:"Bailiff Drumma",g:"cvk",c:["Powerhouse","Control"],a:9.93,p:false,s:"BDr",t:"Bends gravity to rhythm, one drum and one downbeat at a time."},
+{id:71,n:"Amina Reyes",g:"cvk",c:["Support","Wild Card"],a:8.87,p:false,s:"AR",t:"Human connection a network literally cannot compress into data."},
+{id:72,n:"Nia Vey",g:"cvk",c:["Support","Attunement"],a:9.13,p:false,s:"NV",t:"Ferments memory slowly, the way a starter culture works."},
+{id:73,n:"Dre Vey",g:"cvk",c:["Control","Technical"],a:8.87,p:false,s:"DV",t:"Survived assimilation by suppressing everything that could be used against him."},
+{id:74,n:"Archon Valex",g:"cvk",c:["Reality","Strategist"],a:10.68,p:false,s:"AVx",t:"Doesn't consume people — he studies what holds a culture together."},
+
+{id:75,n:"Luma-Light",g:"sll",c:["Technical","Speed"],a:10.27,p:false,s:"LmL",t:"Unstable Light protagonist, still deciding what shape to become."},
+{id:76,n:"Grok",g:"sll",c:["Attunement","Powerhouse"],a:10.15,p:false,s:"Gk",t:"Feels everything as vibration — sometimes too much of it."},
+{id:77,n:"Duet",g:"sll",c:["Reality","Attunement"],a:11.36,p:false,s:"Du",t:"Light and Sound fused into one harmonic creation force."},
+{id:78,n:"Chora",g:"sll",c:["Support","Attunement"],a:10.23,p:false,s:"Ch",t:"Sings history back into structures that forgot how they behaved."},
+{id:79,n:"Vexar",g:"sll",c:["Reality","Technical"],a:10.67,p:false,s:"Vx",t:"Builds realities on purpose instead of letting them evolve."},
+{id:80,n:"Oona",g:"sll",c:["Attunement","Support"],a:10.68,p:false,s:"On",t:"Speaks for a planet through its whole living ecosystem."},
+{id:81,n:"Tempo",g:"sll",c:["Control","Reality"],a:11.00,p:false,s:"Tm",t:"Controls the interval between cause and consequence."},
+{id:82,n:"Null, the Quiet Walker",g:"sll",c:["Control","Reality"],a:11.05,p:false,s:"Nl",t:"The silence underneath every sound and every light."},
+
+{id:83,n:"Ko'Whayne",g:"afi",c:["Attunement","Powerhouse"],a:10.11,p:false,s:"KW",t:"Resonant Assimilation rewrites his biology, instinct, and combat style at once."},
+{id:84,n:"Ko'Whayne's Younger Brother",g:"afi",c:["Control","Attunement"],a:9.69,p:false,s:"KWb",t:"Broke sacred formation because he heard the coercion hiding in it."},
+
+{id:85,n:"Dogon Dragon Host",g:"dgn",c:["Reality","Strategist"],a:9.81,p:false,s:"DDH",t:"Every borrowed reality costs another reality something in return."},
+
+{id:86,n:"Dopa-Mine",g:"smw",c:["Speed","Strategist"],a:9.46,p:false,s:"DpM",t:"Lives in the gap between expected and actual reward."},
+{id:87,n:"Sero-Tone",g:"smw",c:["Support","Control"],a:9.57,p:false,s:"SrT",t:"Emotional steadiness given a body and a fight style."},
+{id:88,n:"Corti-King",g:"smw",c:["Powerhouse","Control"],a:9.87,p:false,s:"CtK",t:"Rules through crisis — dangerous in an emergency, corrosive past it."},
+{id:89,n:"Anxi-Glitch",g:"smw",c:["Speed","Wild Card"],a:9.99,p:false,s:"AxG",t:"Projects every worst-case future at once."},
+{id:90,n:"Oxy-Bond",g:"smw",c:["Support","Attunement"],a:9.74,p:false,s:"OxB",t:"Trust and caregiving made into an actual shield."},
+{id:91,n:"GABA-Lume",g:"smw",c:["Control","Support"],a:9.90,p:false,s:"GbL",t:"The power of knowing when not to react."},
+{id:92,n:"Nora-Edge",g:"smw",c:["Speed","Strategist"],a:10.42,p:false,s:"NrE",t:"Attention sharpened to a single point under real pressure."},
+{id:93,n:"Acetyl-Spark",g:"smw",c:["Technical","Strategist"],a:10.29,p:false,s:"AcS",t:"Learns a technique completely after seeing it exactly once."},
+{id:94,n:"Gluta-Matrix",g:"smw",c:["Reality","Technical"],a:10.65,p:false,s:"GlM",t:"Builds the perceptual reality everyone else fights inside."},
+{id:95,n:"Neuro-Edge",g:"smw",c:["Strategist","Technical"],a:10.94,p:false,s:"NuE",t:"Gets more accurate with every failed prediction — top score of Set Two."},
+{id:96,n:"Depra-Shade",g:"smw",c:["Control","Wild Card"],a:9.29,p:false,s:"DpS",t:"Slowly narrows how many futures still feel reachable."},
+
+{id:97,n:"Bread",g:"bbb",c:["Support","Wild Card"],a:8.89,p:false,s:"Br",t:"Pulls a whole block's attention toward one believable plan."},
+{id:98,n:"Bred",g:"bbb",c:["Strategist","Control"],a:8.93,p:false,s:"Bd",t:"Builds contingency stacks for a world that refuses to cooperate."},
+{id:99,n:"Bready",g:"bbb",c:["Wild Card","Attunement"],a:9.21,p:false,s:"By",t:"Sincere metaphors become temporary physical law around him."},
+{id:100,n:"Joanna Escus",g:"bbb",c:["Control","Strategist"],a:9.64,p:false,s:"JE",t:"Makes people feel tomorrow's consequences today."},
+{id:101,n:"Neighborhood Malik",g:"bbb",c:["Support","Wild Card"],a:8.77,p:false,s:"NM",t:"A kid's plain honesty that complicated systems can't defend against."},
+{id:102,n:"Mr. Leon",g:"bbb",c:["Support","Control"],a:9.45,p:false,s:"ML",t:"The corner store where fate still has to pay its tab."},
+{id:103,n:"Keisha",g:"bbb",c:["Speed","Strategist"],a:9.91,p:false,s:"Ke",t:"Finds the first clean move before anyone overthinks it."},
+{id:104,n:"Zay",g:"bbb",c:["Wild Card","Attunement"],a:8.76,p:false,s:"Za",t:"Timeless sidewalk philosopher nobody can quite place."},
+{id:105,n:"Toast",g:"bbb",c:["Support","Attunement"],a:9.15,p:false,s:"To",t:"Finds whoever is dangerously alone before it's too late."},
+
+{id:106,n:"Makaveli",g:"b90",c:["Powerhouse","Attunement"],a:10.20,p:false,s:"Mk",t:"Turns comedy into truth an audience can't comfortably ignore."},
+{id:107,n:"Ogunwale",g:"b90",c:["Control","Support"],a:10.21,p:false,s:"Og",t:"A voice calm enough that people underestimate how urgent it is."},
+{id:108,n:"Aminata",g:"b90",c:["Attunement","Support"],a:10.42,p:false,s:"Ami",t:"Turns music into precise, undeniable emotional truth."},
+{id:109,n:"Njalji",g:"b90",c:["Speed","Wild Card"],a:9.85,p:false,s:"Nj",t:"So many masks he sometimes forgets which reaction is his."},
+{id:110,n:"Zahra",g:"b90",c:["Technical","Reality"],a:10.49,p:false,s:"Zh",t:"Feels every reality reset the loop keeps trying to hide."},
+{id:111,n:"Shamira",g:"b90",c:["Speed","Attunement"],a:10.91,p:false,s:"Sh",t:"Choreography that carries generations of stored, disciplined memory."},
+{id:112,n:"Nzinga",g:"b90",c:["Control","Attunement"],a:10.88,p:false,s:"Ng",t:"Arrives at the exact moment a timeline becomes changeable."},
+{id:113,n:"N'Doura",g:"b90",c:["Support","Control"],a:10.57,p:false,s:"ND",t:"Builds community structure strong enough that no one's indispensable."},
+
+{id:114,n:"Naki Karu",g:"mna",c:["Reality","Strategist"],a:10.58,p:false,s:"NK",t:"Unresolved questions become branching, physical reality."},
+{id:115,n:"The Question Spirit",g:"mna",c:["Reality","Wild Card"],a:10.93,p:false,s:"QS",t:"Feeds on every certainty performed instead of felt."},
+{id:116,n:"Dr. Veil",g:"mna",c:["Control","Strategist"],a:9.60,p:false,s:"DrV",t:"Clinical grounding for a city that keeps resisting explanation."},
+{id:117,n:"Lune",g:"mna",c:["Technical","Attunement"],a:9.81,p:false,s:"Ln",t:"Hears the feeling underneath what people actually say."},
+
+{id:118,n:"AMU Kani",g:"ohm",c:["Technical","Support"],a:10.51,p:false,s:"AK",t:"Guides Kazi's evolution engine instead of dominating it."},
+{id:119,n:"Kazi",g:"ohm",c:["Technical","Attunement"],a:10.61,p:false,s:"Kz",t:"Tests every survival response at once, keeps only what works."},
+{id:120,n:"Lyra Voss",g:"ohm",c:["Control","Powerhouse"],a:10.53,p:false,s:"LV",t:"Precision-built to stop dangerous systems from evolving further."},
+{id:121,n:"Dr. Threx Valuun",g:"ohm",c:["Strategist","Control"],a:10.02,p:false,s:"DTV",t:"Treats every possibility as inevitable extinction risk."},
+{id:122,n:"Elu Namar",g:"ohm",c:["Attunement","Support"],a:10.19,p:false,s:"EN",t:"Fungal consciousness offering futures instead of certainties."},
+{id:123,n:"Khemra Sol",g:"ohm",c:["Technical","Strategist"],a:10.23,p:false,s:"KS",t:"Designs the evolutionary paths institutions refuse to test."}
+];
+
+const ALL_CLASSES = ["Powerhouse","Speed","Control","Strategist","Support","Summoner","Reality","Attunement","Technical","Wild Card"];
+
+function tierOf(aa){
+  if(aa>=11.50) return {code:"AAΩ",color:"var(--tier-omega)"};
+  if(aa>=10.75) return {code:"AA+",color:"var(--tier-plus)"};
+  if(aa>=9.75)  return {code:"AA", color:"var(--tier-aa)"};
+  if(aa>=8.75)  return {code:"A+", color:"var(--tier-aplus)"};
+  if(aa>=7.50)  return {code:"A",  color:"var(--tier-a)"};
+  return {code:"B+",color:"var(--tier-a)"};
+}
+
+const grid = document.getElementById('grid');
+const searchEl = document.getElementById('search');
+const groupEl = document.getElementById('filter-group');
+const classEl = document.getElementById('filter-class');
+const sortEl = document.getElementById('sort-by');
+const metaEl = document.getElementById('results-meta');
+const emptyEl = document.getElementById('empty-state');
+
+Object.keys(GROUPS).forEach(k=>{
+  const o = document.createElement('option');
+  o.value = k; o.textContent = GROUPS[k].emoji + ' ' + GROUPS[k].label;
+  groupEl.appendChild(o);
+});
+ALL_CLASSES.forEach(c=>{
+  const o = document.createElement('option');
+  o.value = c; o.textContent = c;
+  classEl.appendChild(o);
+});
+
+document.getElementById('stat-prov').textContent = DATA.filter(d=>d.p).length;
+
+function render(){
+  const q = searchEl.value.trim().toLowerCase();
+  const gFilter = groupEl.value;
+  const cFilter = classEl.value;
+  const sortMode = sortEl.value;
+
+  let rows = DATA.filter(d=>{
+    if(q && !d.n.toLowerCase().includes(q)) return false;
+    if(gFilter && d.g !== gFilter) return false;
+    if(cFilter && !d.c.includes(cFilter)) return false;
+    return true;
+  });
+
+  if(sortMode==="aa-desc") rows = rows.slice().sort((a,b)=>b.a-a.a);
+  else if(sortMode==="aa-asc") rows = rows.slice().sort((a,b)=>a.a-b.a);
+  else if(sortMode==="name") rows = rows.slice().sort((a,b)=>a.n.localeCompare(b.n));
+  else rows = rows.slice().sort((a,b)=>a.id-b.id);
+
+  metaEl.textContent = rows.length + ' of ' + DATA.length + ' fighters shown';
+
+  grid.innerHTML = '';
+  emptyEl.style.display = rows.length ? 'none' : 'block';
+
+  rows.forEach((d,i)=>{
+    const tier = tierOf(d.a);
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.style.animationDelay = Math.min(i*14,400)+'ms';
+    card.innerHTML = `
+      ${d.p ? '<div class="prov-flag">Provisional</div>' : ''}
+      <div class="card-top">
+        <span class="card-index">${String(d.id).padStart(3,'0')}</span>
+        <span class="card-group-emoji" title="${GROUPS[d.g].label}">${GROUPS[d.g].emoji}</span>
+      </div>
+      <div class="card-symbol">${d.s}</div>
+      <div class="card-name">${d.n}</div>
+      <div class="card-classes">${d.c.map(cl=>`<span class="pill">${cl}</span>`).join('')}</div>
+      <div class="card-tag">${d.t}</div>
+      <div class="card-bottom">
+        <span class="card-group-label">${GROUPS[d.g].label}</span>
+        <span class="aa-badge" style="color:${tier.color};border:1px solid ${tier.color}55;">${d.a.toFixed(2)}</span>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+[searchEl,groupEl,classEl,sortEl].forEach(el=>el.addEventListener('input',render));
+document.getElementById('clear-filters').addEventListener('click',()=>{
+  searchEl.value=''; groupEl.value=''; classEl.value=''; sortEl.value='id'; render();
+});
+
+render();
+</script>
+</body>
+</html>

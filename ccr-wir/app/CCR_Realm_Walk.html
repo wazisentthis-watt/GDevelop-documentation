@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>CCR — Realm Walk | WIR™</title>
+<style>
+  :root{
+    --gold:#C8940A;--glt:#FFD84D;--cyan:#00E5CC;--c2:#007A6E;
+    --s0:#060C10;--s1:#0D1117;--s2:#161B22;--s3:#21262D;--s4:#30363D;
+    --tx:#E6EDF3;--t2:#8B949E;--t3:#484F58;
+    --crown:#B388FF;--core:#FF6B6B;--root:#4ECDC4;
+    --grass:#173417;--path:#2b2419;--water:#0d2733;
+    --vinyl:#1a1a1a;--groove-line:#3a3a3a;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;background:var(--s0);color:var(--tx);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;overscroll-behavior:none;user-select:none;}
+  #app{max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;}
+
+  /* ---------- HUD ---------- */
+  #hud{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--s1);border-bottom:1px solid var(--s3);gap:8px;}
+  #hud .title{font-size:13px;font-weight:700;color:var(--gold);letter-spacing:.5px;}
+  #hud .stat{font-size:11px;color:var(--t2);display:flex;align-items:center;gap:4px;}
+  #hud .stats{display:flex;gap:10px;}
+
+  #gauntlet{display:flex;align-items:center;gap:6px;padding:8px 12px;background:var(--s1);border-bottom:1px solid var(--s3);overflow-x:auto;}
+  #gauntlet .g-label{font-size:10px;color:var(--t2);white-space:nowrap;margin-right:2px;}
+  .pl-row{display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-bottom:1px solid var(--s4);}
+.pl-disc{width:44px;height:44px;border-radius:50%;background:radial-gradient(circle at 40% 40%,var(--s2),#000 70%);border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.pl-info{flex:1;}
+.pl-name{font-size:13px;font-weight:700;color:var(--tx);}
+.pl-el{font-size:10px;color:var(--gold);font-weight:400;}
+.pl-dots{display:flex;gap:4px;margin:5px 0;}
+.petal-dot{width:12px;height:12px;border-radius:50%;background:var(--s3);border:1px solid var(--s4);display:inline-block;}
+.petal-dot.on{background:radial-gradient(circle,#FFD84D,var(--gold));border-color:#FFD84D;}
+.pl-act{background:var(--s3);border:1px solid var(--gold);color:var(--gold);font-size:11px;font-weight:700;padding:6px 10px;border-radius:8px;}
+.pl-act:disabled{opacity:.4;border-color:var(--s4);color:var(--t2);}
+.pl-hint{font-size:10px;color:var(--t2);margin-top:4px;}
+.pl-done{font-size:12px;color:#4ECDC4;font-weight:700;}
+.badge{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;background:var(--s3);border:1px solid var(--s4);}
+  .badge.filled{background:radial-gradient(circle,var(--glt),var(--gold));border-color:var(--glt);}
+  .badge.empty{opacity:.25;}
+
+  /* ---------- MAP VIEWPORT ---------- */
+  #viewport{position:relative;width:100%;flex:1;overflow:hidden;background:var(--s0);touch-action:none;}
+  #world{position:absolute;top:0;left:0;}
+  .tile{position:absolute;width:28px;height:28px;}
+  .tile.grass{background:var(--grass);}
+  .tile.path{background:var(--path);}
+  .tile.water{background:var(--water);}
+
+  .loc{position:absolute;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:15px;border-radius:6px;cursor:pointer;z-index:5;filter:drop-shadow(0 0 4px rgba(200,148,10,.5));}
+  .loc-label{position:absolute;font-size:8px;color:var(--glt);white-space:nowrap;text-align:center;width:70px;left:-21px;z-index:5;text-shadow:0 1px 2px #000;}
+
+  .snd{position:absolute;width:28px;height:28px;display:flex;align-items:center;justify-content:center;z-index:4;}
+  .snd .core-dot{width:8px;height:8px;border-radius:50%;position:relative;z-index:2;}
+  .snd .ring{position:absolute;border-radius:50%;border:1.5px solid;opacity:0;pointer-events:none;}
+  @keyframes pulse{0%{transform:scale(.3);opacity:.9;}100%{transform:scale(2.6);opacity:0;}}
+
+  .godlet{position:absolute;width:28px;height:28px;display:flex;align-items:center;justify-content:center;z-index:10;transition:left .12s linear, top .12s linear;}
+  .godlet .body{width:18px;height:18px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff,var(--crown) 40%,#5a3fa0 100%);border:1.5px solid var(--glt);box-shadow:0 0 8px rgba(179,136,255,.7);}
+  .godlet .gaunt{position:absolute;bottom:-2px;right:-2px;width:10px;height:10px;border-radius:50%;background:var(--vinyl);border:1px solid var(--groove-line);}
+  .godlet .gaunt::after{content:'';position:absolute;inset:2px;border-radius:50%;border:1px solid var(--gold);}
+
+  /* ---------- SIGNAL METER ---------- */
+  #signal{position:absolute;top:8px;right:8px;width:120px;padding:6px 8px;background:rgba(13,17,23,.88);border:1px solid var(--s4);border-radius:8px;font-size:10px;color:var(--t2);z-index:20;display:none;}
+  #signal.on{display:block;}
+  #signal .bar{height:4px;border-radius:2px;background:var(--s3);margin-top:4px;overflow:hidden;}
+  #signal .fill{height:100%;background:linear-gradient(90deg,var(--cyan),var(--glt));width:0%;transition:width .15s;}
+
+  /* ---------- CONTROLS ---------- */
+  #controls{display:flex;align-items:center;justify-content:space-between;padding:12px;background:var(--s1);border-top:1px solid var(--s3);}
+  #dpad{display:grid;grid-template-columns:repeat(3,40px);grid-template-rows:repeat(3,40px);gap:3px;}
+  #dpad button{background:var(--s3);border:1px solid var(--s4);color:var(--tx);border-radius:8px;font-size:16px;display:flex;align-items:center;justify-content:center;}
+  #dpad button:active{background:var(--gold);color:#000;}
+  #dpad .u{grid-column:2;grid-row:1;} #dpad .l{grid-column:1;grid-row:2;} #dpad .r{grid-column:3;grid-row:2;} #dpad .d{grid-column:2;grid-row:3;}
+  #actbtn{background:linear-gradient(135deg,var(--gold),var(--glt));color:#1a1400;border:none;border-radius:10px;padding:14px 22px;font-size:13px;font-weight:700;letter-spacing:.3px;}
+  #actbtn:disabled{background:var(--s3);color:var(--t3);}
+
+  /* ---------- PANELS ---------- */
+  #overlay{position:fixed;inset:0;background:rgba(3,6,10,.86);display:none;align-items:flex-end;z-index:100;}
+  #overlay.on{display:flex;}
+  #panel{width:100%;max-width:480px;margin:0 auto;background:var(--s1);border-top:1px solid var(--s4);border-radius:16px 16px 0 0;padding:18px 18px 22px;max-height:80vh;overflow-y:auto;}
+  #panel h2{margin:0 0 6px;font-size:16px;color:var(--gold);}
+  #panel .sub{font-size:11px;color:var(--t2);margin-bottom:12px;letter-spacing:.4px;text-transform:uppercase;}
+  #panel p{font-size:13px;line-height:1.55;color:var(--tx);margin:0 0 14px;}
+  #panel .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
+  #panel button.act{flex:1;min-width:120px;background:var(--s3);border:1px solid var(--s4);color:var(--tx);padding:12px;border-radius:10px;font-size:13px;font-weight:600;}
+  #panel button.act.primary{background:linear-gradient(135deg,var(--gold),var(--glt));color:#1a1400;border:none;}
+  #panel button.act:disabled{opacity:.4;}
+  #panel button.close{width:100%;margin-top:14px;background:transparent;border:1px solid var(--s4);color:var(--t2);padding:10px;border-radius:8px;font-size:12px;}
+  .kopani-slot{display:flex;align-items:center;gap:8px;padding:8px;background:var(--s2);border-radius:8px;margin-bottom:6px;font-size:12px;}
+  .kopani-slot .icon{font-size:18px;}
+  .toast{position:fixed;top:14px;left:50%;transform:translateX(-50%);background:var(--s2);border:1px solid var(--glt);color:var(--glt);padding:8px 16px;border-radius:20px;font-size:12px;font-weight:600;z-index:200;opacity:0;transition:opacity .3s, top .3s;pointer-events:none;}
+
+  /* ---------- KOPANI ACCORD (piano bonding) ---------- */
+  #accord-stage{text-align:center;margin-bottom:10px;}
+  #accord-stage .phase{font-size:11px;color:var(--gold);letter-spacing:1px;font-weight:700;}
+  #accord-stage .hint{font-size:11px;color:var(--t2);margin-top:2px;}
+  #accord-target{display:flex;justify-content:center;gap:6px;margin:10px 0;}
+  .note-chip{width:26px;height:26px;border-radius:50%;background:var(--s3);border:1px solid var(--s4);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--t2);}
+  .note-chip.hit{background:var(--root);border-color:var(--root);color:#04231f;}
+  .note-chip.rest{border-style:dashed;}
+  #piano{display:flex;gap:4px;justify-content:center;margin:14px 0 6px;flex-wrap:wrap;}
+  .pkey{width:36px;height:52px;border-radius:6px;background:var(--s2);border:1px solid var(--s4);color:var(--tx);font-size:12px;font-weight:700;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:6px;gap:3px;}
+  .pkey .kb{font-size:9px;color:var(--t3);}
+  .pkey.playing{background:var(--glt);color:#1a1400;transform:translateY(2px);}
+  .pkey.correct{background:var(--root);color:#04231f;}
+  .pkey.wrong{background:var(--core);color:#2a0505;}
+  #accord-msg{font-size:12px;color:var(--t2);text-align:center;min-height:16px;margin-top:8px;}
+
+  /* ---------- ARENA BRIDGE (real fight in an iframe) ---------- */
+  #fight-overlay{position:fixed;inset:0;background:var(--s0);z-index:300;display:none;flex-direction:column;}
+  #fight-overlay.on{display:flex;}
+  #fight-bar{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--s1);border-bottom:1px solid var(--s3);}
+  #fight-bar .ttl{font-size:12px;color:var(--gold);font-weight:700;}
+  #fight-bar button{background:var(--s3);border:1px solid var(--s4);color:var(--tx);padding:6px 12px;border-radius:8px;font-size:11px;}
+  #fight-frame{flex:1;width:100%;border:none;background:#000;}
+  #fight-fallback{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;gap:12px;}
+  #fight-fallback p{font-size:12px;color:var(--t2);max-width:300px;}
+  #fight-fallback a{color:var(--glt);font-size:12px;}
+  .toast.on{opacity:1;top:24px;}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div id="hud">
+    <div class="title">🌀 REALM WALK</div>
+    <div class="stats">
+      <div class="stat">🪙 <span id="mm">0</span></div>
+      <div class="stat">☀️ Day <span id="day">1</span></div>
+      <div class="stat">🌱 <span id="seedstat">—</span></div>
+    </div>
+  </div>
+
+  <div id="gauntlet" onclick="openPlaylist()" role="button" style="cursor:pointer;">
+    <span class="g-label">GAUNTLET · TAP FOR PLAYLIST</span>
+    <div id="badges"></div>
+  </div>
+
+  <div id="viewport">
+    <div id="world"></div>
+    <div id="signal">
+      <div>🎵 SIGNAL</div>
+      <div class="bar"><div class="fill" id="sigfill"></div></div>
+    </div>
+  </div>
+
+  <div id="controls">
+    <div id="dpad">
+      <button class="u" data-d="u">▲</button>
+      <button class="l" data-d="l">◀</button>
+      <button class="r" data-d="r">▶</button>
+      <button class="d" data-d="d">▼</button>
+    </div>
+    <button id="actbtn" disabled>MOVE CLOSER</button>
+  </div>
+
+</div>
+
+<div id="overlay"><div id="panel"></div></div>
+<div class="toast" id="toast"></div>
+
+<div id="fight-overlay">
+  <div id="fight-bar">
+    <span class="ttl">⚔️ ARENA COMMONS — LIVE MATCH</span>
+    <button onclick="closeChallenge()">✕ LEAVE</button>
+  </div>
+  <iframe id="fight-frame" title="CCR Arena match" src="about:blank"></iframe>
+  <div id="fight-fallback" style="display:none">
+    <p>The combat file didn't load. Make sure <b>CCR_v14_FIELD_LIFE_WIR.html</b> is saved in the same folder as this file, then try again.</p>
+    <button class="act" onclick="closeChallenge()">RETURN TO THE WORLD</button>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════
+   CCR — REALM WALK
+   Top-down free-roam overworld. Sound-trail discovery (no bump encounters).
+   Godlet avatar wearing a vinyl-disc gauntlet — badges fill in as you catch KoPani.
+   Garden → Groove → KoPani loop: grow a seedling, press it into a groove, load a
+   KoPani into the groove.
+   Reuses the real 24-element KoPani roster and the real 9 Free Roam locations
+   and flavor text from CCR v14 Field Life, so this is the same world, walkable.
+   ══════════════════════════════════════════ */
+
+const TILE = 28;
+const COLS = 24, ROWS = 16;
+
+const LOCATIONS = [
+  {id:'home',   icon:'🏡', name:'Starter Home',   x:2,  y:8,  desc:'Your Starter Home stores the Dream Seed, field provisions, and the latest groove. Resting here advances the day.'},
+  {id:'market', icon:'🚇', name:'Mansa Market',   x:8,  y:3,  desc:'A lived-in economy — food stalls, repair tables, KoPani-safe transit baskets. MM is earned through contribution, not random treasure.'},
+  {id:'dojo',   icon:'🥋', name:'Kio-Mane Dojo',  x:18, y:8,  desc:'Kio-Mane teaches that defense is not standing still. Footwork, Crown Read, and Root Guard change how later matches behave.'},
+  {id:'grove',  icon:'🌱', name:'KoPani Grove',   x:4,  y:13, desc:'KoPani are independent elemental beings. Search slowly, read temperament, and choose how to approach.'},
+  {id:'commons',icon:'🤝', name:'Arena Commons',  x:12, y:8,  desc:'MELLA from other districts gather here to test chemistry and establish rival history. A spar is a read, not a mugging.'},
+  {id:'halite', icon:'🧂', name:'Halite Yard',    x:20, y:13, desc:'Every pressure mark here is stored as material memory. Careful salvage earns MM. Greedy extraction destroys the evidence.'},
+  {id:'library',icon:'💿', name:'Record Library', x:14, y:3,  desc:'The Record Library teaches you to queue public, delayed IRaKodi decisions — not instant buffs.'},
+  {id:'garden', icon:'🌳', name:'Root Gardens',   x:6,  y:6,  desc:'The Root Gardens need maintenance, pollinator corridors, mineral balance, and patient hands.'},
+  {id:'transit',icon:'🚪', name:'Realm Transit',  x:22, y:6,  desc:'News, travelers, and unfinished routes from connected WIR doors. Some encounters pay. Others simply change what you understand.'},
+];
+
+/* Eight of the real 24 legal-element KoPani, placed as sound-trail sources on the map. */
+const SOUND_KOPANI = [
+  {id:'wild_mistfin',    icon:'🦦', name:'MISTFIN',     element:'O',  x:10, y:11, ability:'RIVER MERCY — restores HP, clears movement debt.',    phrase:['C','E','G']},
+  {id:'wild_sunmoth',    icon:'🦋', name:'SUNMOTH',     element:'Mg', x:5,  y:9,  ability:'POLLEN STEP — a healing reposition.',                  phrase:['E','F','G']},
+  {id:'wild_coilpaw',    icon:'🐍', name:'COILPAW',     element:'Cl', x:19, y:12, ability:'PRESSURE COIL — reduces the next hit, blocks pursuit.', phrase:['C','G','C']},
+  {id:'wild_drumcrow',   icon:'🐦‍⬛', name:'DRUMCROW',   element:'Cu', x:9,  y:4,  ability:'RHYTHM WARNING — forecasts the rival.',                phrase:['G','G','A']},
+  {id:'wild_stonehare',  icon:'🐇', name:'STONEHARE',   element:'Ca', x:16, y:9,  ability:'FAULT HOP — breaks contact across three tiles.',       phrase:['C','C','G']},
+  {id:'wild_glassbeetle',icon:'🪲', name:'GLASS BEETLE',element:'Si', x:15, y:5,  ability:'GROOVE POLISH — queues a Record free.',                phrase:['D','F','A']},
+  {id:'wild_cloudram',   icon:'🐏', name:'CLOUDRAM',    element:'N',  x:21, y:8,  ability:'ATMOS BRACE — absorbs ranged pressure.',               phrase:['A','G','F']},
+  {id:'wild_embergecko', icon:'🦎', name:'EMBER GECKO', element:'W',  x:3,  y:5,  ability:'WALL FLASH — free reposition.',                        phrase:['F','A','C']},
+];
+const NOTE_FREQS = {C:261.63,D:293.66,E:329.63,F:349.23,G:392.00,A:440.00,B:493.88};
+const NOTE_KEYS = ['C','D','E','F','G','A','B'];
+const KB_MAP = {a:'C',s:'D',d:'E',f:'F',g:'G',h:'A',j:'B',k:'C'};
+
+const SEED_GROW_DAYS = 3;
+
+function loadState(){
+  try{
+    const raw = localStorage.getItem('ccr_realmwalk_v1');
+    if(!raw) return null;
+    const s = JSON.parse(raw);
+    // migrate pre-Playlist saves: found[id] used to be plain `true`
+    if(s.found){ for(const id in s.found){ if(s.found[id]===true){ s.found[id]={petals:2,caughtDay:s.day||1,lastCare:null}; } } }
+    return s;
+  }catch(e){}
+  return null;
+}
+function freshState(){
+  return {
+    x:2, y:9, day:1, mm:5,
+    found:{},          // kopani id -> {petals, caughtDay, lastCare}
+    seedling:null,     // {plantedDay}
+    grooves:[],         // [{id, loadedKopani|null}]
+    grooveSeq:0,
+  };
+}
+let S = loadState() || freshState();
+function save(){
+  try{ localStorage.setItem('ccr_realmwalk_v1', JSON.stringify(S)); }catch(e){/* storage unavailable — play continues, just won't persist */}
+}
+
+let audioCtx = null;
+function ensureAudio(){
+  if(audioCtx) return;
+  try{ audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){}
+}
+function pingTone(strength){ // strength 0..1
+  if(!audioCtx) return;
+  try{
+    const t = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = 300 + strength*500;
+    gain.gain.setValueAtTime(0, t);
+    gain.gain.linearRampToValueAtTime(0.05 + strength*0.10, t+0.02);
+    gain.gain.linearRampToValueAtTime(0, t+0.22);
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.start(t); osc.stop(t+0.24);
+  }catch(e){}
+}
+
+function dist(ax,ay,bx,by){ return Math.abs(ax-bx)+Math.abs(ay-by); }
+
+function nearestSound(){
+  let best=null, bestD=999;
+  SOUND_KOPANI.forEach(k=>{
+    if(S.found[k.id]) return;
+    const d = dist(S.x,S.y,k.x,k.y);
+    if(d<bestD){ bestD=d; best=k; }
+  });
+  return {k:best, d:bestD};
+}
+
+function toast(msg){
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('on');
+  setTimeout(()=>el.classList.remove('on'), 1800);
+}
+
+function buildWorld(){
+  const world = document.getElementById('world');
+  world.style.width = (COLS*TILE)+'px';
+  world.style.height = (ROWS*TILE)+'px';
+  let html = '';
+  for(let y=0;y<ROWS;y++){
+    for(let x=0;x<COLS;x++){
+      const isPath = (x+y)%5===0;
+      html += `<div class="tile ${isPath?'path':'grass'}" style="left:${x*TILE}px;top:${y*TILE}px"></div>`;
+    }
+  }
+  LOCATIONS.forEach(l=>{
+    html += `<div class="loc" style="left:${l.x*TILE}px;top:${l.y*TILE}px;background:var(--s2);border:1px solid var(--gold)">${l.icon}</div>`;
+    html += `<div class="loc-label" style="left:${l.x*TILE-21}px;top:${l.y*TILE+30}px">${l.name}</div>`;
+  });
+  SOUND_KOPANI.forEach(k=>{
+    if(S.found[k.id]) return;
+    html += `<div class="snd" id="snd-${k.id}" style="left:${k.x*TILE}px;top:${k.y*TILE}px">
+      <div class="ring" id="ring-${k.id}"></div>
+      <div class="core-dot" style="background:${elColor(k.element)}"></div>
+    </div>`;
+  });
+  html += `<div class="godlet" id="godlet"><div class="body"></div><div class="gaunt"></div></div>`;
+  world.innerHTML = html;
+}
+function elColor(sym){
+  const warm=['Na','Li','F','Cl','U','W'];
+  const cool=['O','N','Xe','Cu','Mg','Ca'];
+  if(warm.includes(sym)) return '#FF6B6B';
+  if(cool.includes(sym)) return '#4ECDC4';
+  return '#FFD84D';
+}
+
+function renderPlayer(){
+  const g = document.getElementById('godlet');
+  g.style.left = (S.x*TILE)+'px';
+  g.style.top = (S.y*TILE)+'px';
+  const vp = document.getElementById('viewport');
+  const world = document.getElementById('world');
+  const vw = vp.clientWidth, vh = vp.clientHeight;
+  let ox = vw/2 - (S.x*TILE+TILE/2);
+  let oy = vh/2 - (S.y*TILE+TILE/2);
+  ox = Math.min(0, Math.max(vw-COLS*TILE, ox));
+  oy = Math.min(0, Math.max(vh-ROWS*TILE, oy));
+  world.style.transform = `translate(${ox}px,${oy}px)`;
+}
+
+function renderHUD(){
+  document.getElementById('mm').textContent = S.mm;
+  document.getElementById('day').textContent = S.day;
+  const el = document.getElementById('seedstat');
+  if(!S.seedling){ el.textContent='none planted'; }
+  else{
+    const grown = S.day - S.seedling.plantedDay;
+    el.textContent = grown>=SEED_GROW_DAYS ? 'ready!' : `${grown}/${SEED_GROW_DAYS}d`;
+  }
+  const badgeWrap = document.getElementById('badges');
+  badgeWrap.innerHTML = SOUND_KOPANI.map(k=>
+    `<div class="badge ${S.found[k.id]?'filled':'empty'}" title="${k.name}">${S.found[k.id]?k.icon:'?'}</div>`
+  ).join('');
+}
+
+/* ══════════════ THE VINYL PLAYLIST ══════════════
+   Every caught KoPani is a track on your record. Catching
+   already covers Notice+Match (petals start at 2/5) — Adapt,
+   Shared Function, and Return are real ongoing care here. */
+const PETAL_STEPS = [
+  {to:3, verb:'Practice',        detail:'Replay its phrase from memory — once per day.'},
+  {to:4, verb:'Bring to Garden', detail:'Needs a fully grown seedling at Root Gardens.'},
+  {to:5, verb:'Complete the Bond', detail:'Costs 3 Mansa Money — the Return.'},
+];
+function openPlaylist(){
+  document.getElementById('overlay').classList.add('on');
+  renderPlaylist();
+}
+function renderPlaylist(){
+  const panel = document.getElementById('panel');
+  const caught = SOUND_KOPANI.filter(k=>S.found[k.id]);
+  let rows = '';
+  if(!caught.length){
+    rows = `<p>No tracks pressed yet. Follow a sound trail and play its phrase back to add your first record.</p>`;
+  } else {
+    rows = caught.map(k=>{
+      const rec = S.found[k.id];
+      const petals = rec.petals||2;
+      const dots = [1,2,3,4,5].map(i=>`<span class="petal-dot ${i<=petals?'on':''}"></span>`).join('');
+      let actionHTML = '';
+      if(petals>=5){
+        actionHTML = `<div class="pl-done">✦ Bond complete</div>`;
+      } else {
+        const step = PETAL_STEPS[petals-2];
+        const today = S.day;
+        if(step.to===3){
+          const onCooldown = rec.lastCare===today;
+          actionHTML = `<button class="pl-act" ${onCooldown?'disabled':''} onclick="practiceKopani('${k.id}')">${onCooldown?'Practiced today':step.verb}</button>`;
+        } else if(step.to===4){
+          const gardenReady = S.seedling && (S.day - S.seedling.plantedDay) >= SEED_GROW_DAYS;
+          actionHTML = `<button class="pl-act" ${gardenReady?'':'disabled'} onclick="gardenKopani('${k.id}')">${gardenReady?step.verb:'Needs a grown seedling'}</button>`;
+        } else {
+          const canAfford = S.mm>=3;
+          actionHTML = `<button class="pl-act" ${canAfford?'':'disabled'} onclick="completeBond('${k.id}')">${canAfford?step.verb+' (3 MM)':'Need 3 MM'}</button>`;
+        }
+        actionHTML += `<div class="pl-hint">${step.detail}</div>`;
+      }
+      return `<div class="pl-row">
+        <div class="pl-disc">${k.icon}</div>
+        <div class="pl-info">
+          <div class="pl-name">${k.name} <span class="pl-el">${k.element}</span></div>
+          <div class="pl-dots">${dots}</div>
+          ${actionHTML}
+        </div>
+      </div>`;
+    }).join('');
+  }
+  panel.innerHTML = `
+    <h2>💿 Your Playlist</h2>
+    <div class="sub">${caught.length}/${SOUND_KOPANI.length} tracks pressed</div>
+    ${rows}
+    <div class="row" style="margin-top:14px;">
+      <button class="act" onclick="exportPlaylist()">⬇ EXPORT SAVE CODE</button>
+      <button class="act" onclick="showImportBox()">⬆ IMPORT SAVE CODE</button>
+    </div>
+    <div id="save-io"></div>
+    <div class="row"><button class="act" onclick="closePanel()">CLOSE</button></div>
+  `;
+}
+function practiceKopani(id){
+  const rec = S.found[id]; if(!rec || rec.lastCare===S.day) return;
+  rec.petals = 3; rec.lastCare = S.day;
+  toast('🎵 Practiced — Adapt petal earned');
+  save(); renderPlaylist();
+}
+function gardenKopani(id){
+  const rec = S.found[id];
+  if(!rec || !S.seedling || (S.day - S.seedling.plantedDay) < SEED_GROW_DAYS) return;
+  rec.petals = 4;
+  toast('🌱 Shared Function petal earned');
+  save(); renderPlaylist();
+}
+function completeBond(id){
+  const rec = S.found[id];
+  if(!rec || S.mm<3) return;
+  S.mm -= 3; rec.petals = 5;
+  toast('✦ Accord complete — Return petal earned');
+  save(); renderHUD(); renderPlaylist();
+}
+function exportPlaylist(){
+  const code = btoa(unescape(encodeURIComponent(JSON.stringify(S))));
+  const box = document.getElementById('save-io');
+  box.innerHTML = `<div class="sub">Copy this — bring it back with Import on any device.</div><textarea id="pl-savecode" readonly style="width:100%;height:70px;font-size:10px;font-family:monospace;background:var(--s2);color:var(--tx);border:1px solid var(--s4);border-radius:8px;padding:8px;">${code}</textarea>`;
+}
+function showImportBox(){
+  const box = document.getElementById('save-io');
+  box.innerHTML = `<textarea id="pl-importbox" placeholder="Paste your save code" style="width:100%;height:70px;font-size:10px;font-family:monospace;background:var(--s2);color:var(--tx);border:1px solid var(--s4);border-radius:8px;padding:8px;"></textarea><div class="row"><button class="act primary" onclick="doImportPlaylist()">LOAD</button></div>`;
+}
+function doImportPlaylist(){
+  try{
+    const raw = document.getElementById('pl-importbox').value.trim();
+    const parsed = JSON.parse(decodeURIComponent(escape(atob(raw))));
+    S = parsed;
+    save(); buildWorld(); renderHUD(); renderPlaylist();
+    toast('Save loaded');
+  }catch(e){ toast('Invalid save code'); }
+}
+
+function renderSignal(){
+  const {k, d} = nearestSound();
+  const sigEl = document.getElementById('signal');
+  const actBtn = document.getElementById('actbtn');
+  if(!k){ sigEl.classList.remove('on'); actBtn.disabled=true; actBtn.textContent='—'; return; }
+  sigEl.classList.add('on');
+  const strength = Math.max(0, 1 - d/14);
+  document.getElementById('sigfill').style.width = Math.round(strength*100)+'%';
+  SOUND_KOPANI.forEach(sk=>{
+    const ring = document.getElementById('ring-'+sk.id);
+    if(!ring) return;
+    if(sk.id===k.id && d<=6){
+      const s2 = Math.max(0,1-d/6);
+      ring.style.borderColor = elColor(sk.element);
+      ring.style.width = ring.style.height = '28px';
+      ring.style.left='0';ring.style.top='0';
+      ring.style.animation = `pulse ${1.6-s2*1.0}s ease-out infinite`;
+    } else {
+      ring.style.animation='none';
+    }
+  });
+  if(d<=1){
+    actBtn.disabled=false; actBtn.textContent=`🎵 LISTEN TO ${k.name}`;
+  } else {
+    actBtn.disabled=true; actBtn.textContent = d<=3?'GETTING WARMER…':'MOVE CLOSER';
+  }
+}
+
+function tick(){ renderPlayer(); renderHUD(); renderSignal(); save(); }
+
+function tryMove(dx,dy){
+  ensureAudio();
+  const nx = Math.min(COLS-1, Math.max(0, S.x+dx));
+  const ny = Math.min(ROWS-1, Math.max(0, S.y+dy));
+  if(nx===S.x && ny===S.y) return;
+  S.x=nx; S.y=ny;
+  const {d} = nearestSound();
+  if(d<=10) pingTone(Math.max(0,1-d/10));
+  const loc = LOCATIONS.find(l=>l.x===S.x&&l.y===S.y);
+  tick();
+  if(loc) openLocation(loc);
+}
+
+document.getElementById('dpad').addEventListener('click', e=>{
+  const b = e.target.closest('button'); if(!b) return;
+  const d = b.dataset.d;
+  if(d==='u') tryMove(0,-1);
+  if(d==='d') tryMove(0,1);
+  if(d==='l') tryMove(-1,0);
+  if(d==='r') tryMove(1,0);
+});
+document.addEventListener('keydown', e=>{
+  if(document.getElementById('overlay').classList.contains('on')) return;
+  if(e.key==='ArrowUp'||e.key==='w') tryMove(0,-1);
+  else if(e.key==='ArrowDown'||e.key==='s') tryMove(0,1);
+  else if(e.key==='ArrowLeft'||e.key==='a') tryMove(-1,0);
+  else if(e.key==='ArrowRight'||e.key==='d') tryMove(1,0);
+});
+
+document.getElementById('actbtn').addEventListener('click', ()=>{
+  const {k, d} = nearestSound();
+  if(!k || d>1) return;
+  startAccord(k);
+});
+
+/* ══════════════════════════════════════════
+   THE KOPANI ACCORD — "Bond Song"
+   You don't catch a KoPani, you hear its Groove, learn its rhythm, and echo it
+   back. Wrong notes are information, not a punishment — the KoPani stays, you
+   just listen again. Orbit Bond tier: 3-note phrases, notes stay visible as a
+   hint while you play.
+   ══════════════════════════════════════════ */
+let ACCORD = null; // {kopani, input:[], playing:bool}
+
+function noteTone(letter, dur=0.34){
+  ensureAudio();
+  if(!audioCtx) return;
+  try{
+    const t = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.value = NOTE_FREQS[letter];
+    gain.gain.setValueAtTime(0, t);
+    gain.gain.linearRampToValueAtTime(0.12, t+0.02);
+    gain.gain.linearRampToValueAtTime(0, t+dur);
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.start(t); osc.stop(t+dur+0.02);
+  }catch(e){}
+}
+
+function renderPiano(){
+  return `<div id="piano">${NOTE_KEYS.map((n,i)=>{
+    const kbLetter = Object.keys(KB_MAP).find(k=>KB_MAP[k]===n && (n!=='C' || k==='a')) || '';
+    return `<button class="pkey" id="pkey-${n}" onclick="pressNote('${n}')"><span>${n}</span><span class="kb">${kbLetter}</span></button>`;
+  }).join('')}</div>`;
+}
+
+function renderAccordTarget(){
+  if(!ACCORD) return '';
+  return `<div id="accord-target">${ACCORD.kopani.phrase.map((n,i)=>
+    `<div class="note-chip ${i<ACCORD.input.length?'hit':''}">${n}</div>`
+  ).join('')}</div>`;
+}
+
+window.startAccord = function(k){
+  ensureAudio();
+  ACCORD = {kopani:k, input:[], playing:true};
+  const panel = document.getElementById('panel');
+  panel.innerHTML = `
+    <h2>🎵 The KoPani Accord</h2>
+    <div class="sub">Bond song — hear it, then play it back</div>
+    <p>${k.icon} <b>${k.name}</b> is calling. Listen to its phrase, then answer with the same notes in order. A wrong note just means listen again — nothing is lost.</p>
+    <div id="accord-stage"><div class="phase" id="accord-phase">LISTENING…</div><div class="hint">Watch the keys light up</div></div>
+    ${renderAccordTarget()}
+    ${renderPiano()}
+    <div id="accord-msg"></div>
+    <button class="close" onclick="ACCORD=null;closePanel();">WALK AWAY</button>
+  `;
+  document.getElementById('overlay').classList.add('on');
+  playPhrase(k.phrase, ()=>{
+    if(!ACCORD) return;
+    ACCORD.playing = false;
+    document.getElementById('accord-phase').textContent = 'YOUR TURN';
+    document.getElementById('accord-phase').nextElementSibling.textContent = 'Play the notes back in order';
+  });
+};
+
+function playPhrase(phrase, onDone){
+  let i = 0;
+  function step(){
+    if(!ACCORD){ return; }
+    if(i>=phrase.length){ onDone && onDone(); return; }
+    const n = phrase[i];
+    const keyEl = document.getElementById('pkey-'+n);
+    if(keyEl) keyEl.classList.add('playing');
+    noteTone(n);
+    setTimeout(()=>{ if(keyEl) keyEl.classList.remove('playing'); }, 300);
+    i++;
+    setTimeout(step, 480);
+  }
+  step();
+}
+
+window.pressNote = function(n){
+  if(!ACCORD || ACCORD.playing) return;
+  noteTone(n, 0.22);
+  const keyEl = document.getElementById('pkey-'+n);
+  const expected = ACCORD.kopani.phrase[ACCORD.input.length];
+  if(n===expected){
+    ACCORD.input.push(n);
+    if(keyEl){ keyEl.classList.add('correct'); setTimeout(()=>keyEl.classList.remove('correct'),200); }
+    document.getElementById('accord-target').outerHTML = renderAccordTarget();
+    if(ACCORD.input.length>=ACCORD.kopani.phrase.length){
+      resolveAccord(true);
+    }
+  } else {
+    if(keyEl){ keyEl.classList.add('wrong'); setTimeout(()=>keyEl.classList.remove('wrong'),250); }
+    document.getElementById('accord-msg').textContent = 'Not quite — listen again';
+    ACCORD.input = [];
+    document.getElementById('accord-target').outerHTML = renderAccordTarget();
+    ACCORD.playing = true;
+    document.getElementById('accord-phase').textContent = 'LISTENING…';
+    setTimeout(()=>playPhrase(ACCORD.kopani.phrase, ()=>{
+      if(!ACCORD) return;
+      ACCORD.playing = false;
+      document.getElementById('accord-phase').textContent = 'YOUR TURN';
+    }), 500);
+  }
+};
+
+function resolveAccord(success){
+  const k = ACCORD.kopani;
+  ACCORD = null;
+  if(success){
+    S.found[k.id] = {petals:2, caughtDay:S.day, lastCare:null}; // Notice + Match already done
+    document.getElementById('accord-msg').textContent = `✨ Accord complete — ${k.name} bonds`;
+    setTimeout(()=>{ closePanel(); toast(`⚡ ${k.name} joins your Playlist`); buildWorld(); tick(); save(); }, 700);
+  }
+}
+
+document.addEventListener('keydown', e=>{
+  if(ACCORD && !ACCORD.playing && KB_MAP[e.key.toLowerCase()]){
+    pressNote(KB_MAP[e.key.toLowerCase()]);
+  }
+});
+
+function closePanel(){ document.getElementById('overlay').classList.remove('on'); document.getElementById('panel').innerHTML=''; }
+
+function openLocation(loc){
+  const panel = document.getElementById('panel');
+  let actionsHTML = '';
+  if(loc.id==='home'){
+    actionsHTML = `<div class="row"><button class="act primary" onclick="restHome()">☀️ REST — ADVANCE DAY</button></div>`;
+  } else if(loc.id==='garden'){
+    if(!S.seedling){
+      actionsHTML = `<div class="row"><button class="act primary" onclick="plantSeedling()">🌱 PLANT A SEEDLING</button></div>`;
+    } else {
+      const grown = S.day - S.seedling.plantedDay;
+      if(grown>=SEED_GROW_DAYS){
+        actionsHTML = `<p>Your seedling is ready.</p><div class="row"><button class="act primary" onclick="pressGroove()">💿 PRESS INTO A GROOVE</button></div>`;
+      } else {
+        actionsHTML = `<p>Growing — ${grown}/${SEED_GROW_DAYS} days. Rest at home to advance the day.</p>`;
+      }
+    }
+    if(S.grooves.length){
+      actionsHTML += `<p style="margin-top:12px">Your grooves:</p>` + S.grooves.map(g=>{
+        const foundList = Object.keys(S.found);
+        const loadedName = g.loadedKopani ? (SOUND_KOPANI.find(k=>k.id===g.loadedKopani)||{name:g.loadedKopani}).name : null;
+        if(loadedName){
+          return `<div class="kopani-slot"><span class="icon">💿</span> Groove ${g.id} — holding ${loadedName}</div>`;
+        }
+        const options = foundList.filter(fid=>!S.grooves.some(gg=>gg.loadedKopani===fid));
+        if(!options.length) return `<div class="kopani-slot"><span class="icon">💿</span> Groove ${g.id} — empty, no KoPani caught yet</div>`;
+        return `<div class="kopani-slot"><span class="icon">💿</span> Groove ${g.id} — empty
+          <select id="sel-${g.id}" style="margin-left:auto;background:var(--s3);color:var(--tx);border:1px solid var(--s4);border-radius:6px;padding:4px;">
+            ${options.map(fid=>`<option value="${fid}">${(SOUND_KOPANI.find(k=>k.id===fid)||{name:fid}).name}</option>`).join('')}
+          </select>
+          <button class="act" style="flex:0 0 auto;padding:6px 10px;" onclick="loadGroove('${g.id}')">Load</button>
+        </div>`;
+      }).join('');
+    }
+  } else if(loc.id==='market'){
+    actionsHTML = `<div class="row"><button class="act primary" onclick="marketJob()">🔧 TAKE A REPAIR SHIFT (+2 MM)</button></div>`;
+  } else if(loc.id==='dojo'){
+    actionsHTML = `<div class="row"><button class="act primary" onclick="trainDojo()">🥋 TRAIN (−3 MM)</button></div>`;
+  } else if(loc.id==='commons'){
+    actionsHTML = `<p>A MELLA from another district is testing chemistry here. Step in and fight for real.</p><div class="row"><button class="act primary" onclick="startChallenge()">⚔️ CHALLENGE — ENTER THE ARENA</button></div>`;
+  } else {
+    actionsHTML = `<p style="opacity:.7">Nothing to do here yet — just passing through.</p>`;
+  }
+  panel.innerHTML = `
+    <h2>${loc.icon} ${loc.name}</h2>
+    <div class="sub">Free Roam location</div>
+    <p>${loc.desc}</p>
+    ${actionsHTML}
+    <button class="close" onclick="closePanel()">CONTINUE WALKING</button>
+  `;
+  document.getElementById('overlay').classList.add('on');
+}
+
+window.restHome = function(){
+  S.day += 1;
+  toast('☀️ A new day begins');
+  closePanel(); tick();
+};
+window.plantSeedling = function(){
+  S.seedling = {plantedDay:S.day};
+  toast('🌱 Seedling planted');
+  closePanel(); tick();
+};
+window.pressGroove = function(){
+  S.grooveSeq += 1;
+  S.grooves.push({id:S.grooveSeq, loadedKopani:null});
+  S.seedling = null;
+  toast('💿 New groove pressed');
+  closePanel(); openLocation(LOCATIONS.find(l=>l.id==='garden')); tick();
+};
+window.loadGroove = function(gid){
+  const sel = document.getElementById('sel-'+gid);
+  if(!sel || !sel.value) return;
+  const g = S.grooves.find(x=>x.id===Number(gid));
+  if(g){ g.loadedKopani = sel.value; toast('💿 KoPani loaded into groove'); }
+  closePanel(); openLocation(LOCATIONS.find(l=>l.id==='garden')); tick();
+};
+window.marketJob = function(){
+  S.mm += 2;
+  toast('🔧 +2 MM earned');
+  closePanel(); tick();
+};
+window.trainDojo = function(){
+  if(S.mm<3){ toast('Not enough MM'); return; }
+  S.mm -= 3;
+  toast('🥋 Training complete');
+  closePanel(); tick();
+};
+
+/* ══════════════════════════════════════════
+   ARENA BRIDGE — walking into Arena Commons opens a real match in the actual
+   combat engine (CCR_v14_FIELD_LIFE_WIR.html), loaded in an iframe alongside
+   this world. The combat file posts a message back when the match ends; we
+   never reach into its internals directly, so nothing about that file needs
+   to know Realm Walk exists.
+   ══════════════════════════════════════════ */
+let fightLoadTimer = null;
+window.startChallenge = function(){
+  closePanel();
+  const frame = document.getElementById('fight-frame');
+  const fallback = document.getElementById('fight-fallback');
+  fallback.style.display = 'none';
+  frame.style.display = '';
+  frame.src = 'CCR_v14_FIELD_LIFE_WIR.html';
+  document.getElementById('fight-overlay').classList.add('on');
+  clearTimeout(fightLoadTimer);
+  let confirmedLoaded = false;
+  frame.onload = ()=>{
+    try{
+      const doc = frame.contentDocument;
+      // A real load has real body content; a blocked/missing/blank navigation does not.
+      if(doc && doc.body && doc.body.textContent && doc.body.textContent.trim().length > 40) confirmedLoaded = true;
+    }catch(e){
+      // Cross-origin access blocked — treat as loaded rather than guess wrong (this happens
+      // for legitimate loads too depending on how the pair of files is hosted).
+      confirmedLoaded = true;
+    }
+  };
+  fightLoadTimer = setTimeout(()=>{
+    if(!confirmedLoaded){
+      frame.style.display='none';
+      fallback.style.display='flex';
+    }
+  }, 4000);
+};
+window.closeChallenge = function(){
+  document.getElementById('fight-overlay').classList.remove('on');
+  document.getElementById('fight-frame').src = 'about:blank';
+  clearTimeout(fightLoadTimer);
+  tick();
+};
+window.addEventListener('message', (e)=>{
+  const data = e.data;
+  if(!data || data.type!=='ccr-match-result') return;
+  if(data.outcome==='win'){
+    S.mm += 6;
+    toast(`⚔️ Victory over ${data.rival||'the rival'} — +6 MM`);
+  } else if(data.outcome==='loss'){
+    S.mm += 1;
+    toast(`⚔️ Defeated by ${data.rival||'the rival'} — the Dream Seed remembers. +1 MM`);
+  }
+  save();
+  setTimeout(()=>{ closeChallenge(); }, 1600);
+});
+
+buildWorld();
+window.addEventListener('resize', renderPlayer);
+tick();
+</script>
+</body>
+</html>
